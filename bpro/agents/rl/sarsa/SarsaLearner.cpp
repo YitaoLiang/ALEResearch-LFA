@@ -31,6 +31,7 @@ SarsaLearner::SarsaLearner(ALEInterface& ale, Features *features, Parameters *pa
 	pathWeightsFileToLoad = param->getPathToWeightsFiles();
     featureSeen.resize(numActions);
 	
+    cout<<numActions<<endl;
 	for(int i = 0; i < numActions; i++){
 		//Initialize Q;
 		Q.push_back(0);
@@ -287,8 +288,7 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
 		prevCumReward = cumReward;
 		ale.reset_game();
 		if(toSaveCheckPoint && episode%saveWeightsEveryXSteps == 0){
-            cout<<"saving"<<endl;
-			saveCheckPoint(episode,totalNumberFrames,episodeResults,saveWeightsEveryXSteps);
+            saveCheckPoint(episode,totalNumberFrames,episodeResults,saveWeightsEveryXSteps);
         }
 	}
 }
