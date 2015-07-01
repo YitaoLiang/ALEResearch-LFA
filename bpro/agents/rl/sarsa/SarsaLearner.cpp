@@ -32,7 +32,6 @@ SarsaLearner::SarsaLearner(ALEInterface& ale, Features *features, Parameters *pa
 	pathWeightsFileToLoad = param->getPathToWeightsFiles();
     featureSeen.resize(numActions);
 	
-    cout<<numActions<<endl;
 	for(int i = 0; i < numActions; i++){
 		//Initialize Q;
 		Q.push_back(0);
@@ -176,7 +175,7 @@ void SarsaLearner::saveCheckPoint(int episode, int totalNumberFrames, vector<flo
     checkPointFile<<totalNumberFrames<<endl;
     checkPointFile << episode<<endl;
     checkPointFile << firstReward<<endl;
-    checkPointFile << maxFeatVectorNorm;
+    checkPointFile << maxFeatVectorNorm<<endl;
     for (int a=0;a<featureSeen.size();a++){
         for (int index=0; index<featureSeen[a].size();index++){
             checkPointFile<<a<<" "<<featureSeen[a][index]<<" "<<w[a][featureSeen[a][index]]<<"\t";
