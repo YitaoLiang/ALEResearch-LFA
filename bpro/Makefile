@@ -2,7 +2,7 @@
 #
 # Author: Marlos C. Machado
 
-ALE := /Users/MikeLyt/Desktop/AI/Arcade-Learning-Environment
+ALE := ../../Arcade-Learning-Environment
 
 # Set this to 1 to enable SDL and display_screen
 USE_SDL     := 0

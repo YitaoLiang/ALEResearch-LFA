@@ -17,8 +17,6 @@
 #include <stdio.h>
 #include <math.h>
 using namespace std;
-//commit change
-//commit change2
 
 SarsaLearner::SarsaLearner(ALEInterface& ale, Features *features, Parameters *param,int seed) : RLLearner(ale, param,seed) {
     totalNumberFrames = 0.0;
