@@ -215,7 +215,7 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
 
 	//Repeat (for each episode):
 	//This is going to be interrupted by the ALE code since I set max_num_frames beforehand
-	for(int episode = episodePassed+1; episode <= 100; episode++){
+	for(int episode = episodePassed+1; episode <= 5000; episode++){
 		//We have to clean the traces every episode:
 		for(unsigned int a = 0; a < nonZeroElig.size(); a++){
 			for(unsigned int i = 0; i < nonZeroElig[a].size(); i++){
@@ -307,7 +307,7 @@ void SarsaLearner::evaluatePolicy(ALEInterface& ale, Features *features){
     resultFile.open(oldName.c_str());
     
 	//Repeat (for each episode):
-	for(int episode = 1; episode <= 10; episode++){
+	for(int episode = 1; episode <= 500; episode++){
 		//Repeat(for each step of episode) until game is over:
 		for(int step = 0; !ale.game_over() && step < episodeLength; step++){
 			//Get state and features active on that state:		
