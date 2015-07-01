@@ -24,10 +24,10 @@ endif
 
 all: learnerBpro learnerRedundant
 
-learnerBpro: mainBpro.o Mathematics.o Parameters.o Timer.o Features.o Background.o BPROFeatures.o RLLearner.o SarsaLearner.o RedundantBPROFeatures.o
+learnerBpro: bin/mainBpro.o bin/Mathematics.o bin/Parameters.o bin/Timer.o bin/Features.o bin/Background.o bin/BPROFeatures.o bin/RLLearner.o bin/SarsaLearner.o
 	$(CXX) $(FLAGS) bin/mainBpro.o bin/Mathematics.o bin/Timer.o bin/Parameters.o bin/Features.o bin/Background.o bin/BPROFeatures.o bin/RLLearner.o bin/SarsaLearner.o -o learnerBpro
 
-learnerRedundant: mainRedundant.o Mathematics.o Parameters.o Timer.o Features.o Background.o BPROFeatures.o RLLearner.o SarsaLearner.o RedundantBPROFeatures.o
+learnerRedundant: bin/mainRedundant.o bin/Mathematics.o bin/Parameters.o bin/Timer.o bin/Features.o bin/Background.o bin/BPROFeatures.o bin/RLLearner.o bin/SarsaLearner.o bin/RedundantBPROFeatures.o
 	$(CXX) $(FLAGS) bin/mainRedundant.o bin/Mathematics.o bin/Timer.o bin/Parameters.o bin/Features.o bin/Background.o bin/RedundantBPROFeatures.o bin/RLLearner.o bin/SarsaLearner.o -o learnerRedundant
 
 mainBpro.o: mainBpro.cpp
