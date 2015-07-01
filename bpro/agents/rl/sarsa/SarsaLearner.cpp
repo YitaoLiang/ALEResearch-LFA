@@ -20,6 +20,7 @@ using namespace std;
 
 SarsaLearner::SarsaLearner(ALEInterface& ale, Features *features, Parameters *param,int seed) : RLLearner(ale, param,seed) {
     totalNumberFrames = 0.0;
+    maxFeatVectorNorm = 1;
     
     delta = 0.0;
 	alpha = param->getAlpha();
@@ -175,6 +176,7 @@ void SarsaLearner::saveCheckPoint(int episode, int totalNumberFrames, vector<flo
     checkPointFile<<totalNumberFrames<<endl;
     checkPointFile << episode<<endl;
     checkPointFile << firstReward<<endl;
+    checkPointFile << maxFeatVectorNorm;
     for (int a=0;a<featureSeen.size();a++){
         for (int index=0; index<featureSeen[a].size();index++){
             checkPointFile<<a<<" "<<featureSeen[a][index]<<" "<<w[a][featureSeen[a][index]]<<"\t";
@@ -195,6 +197,7 @@ void SarsaLearner::loadCheckPoint(ifstream& checkPointToLoad){
     checkPointToLoad >> totalNumberFrames;
     checkPointToLoad >> episodePassed;
     checkPointToLoad >> firstReward;
+    checkPointToLoad >> maxFeatVectorNorm;
     int action, index;
     float weight;
     while (checkPointToLoad>>action && checkPointToLoad>>index && checkPointToLoad>>weight){
@@ -209,7 +212,6 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
 	vector<float> reward;
 	double elapsedTime;
 	double cumReward = 0, prevCumReward = 0;
-	unsigned int maxFeatVectorNorm = 1;
 	sawFirstReward = 0; firstReward = 1.0;
 
 	//Repeat (for each episode):

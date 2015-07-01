@@ -26,6 +26,7 @@ class SarsaLearner : public RLLearner{
         std::string nameForLearningCondition;
         int episodePassed;
         int totalNumberFrames;
+        unsigned int maxFeatVectorNorm;
 
 		vector<int> F;					//Set of features active
 		vector<int> Fnext;              //Set of features active in next state
