@@ -30,37 +30,37 @@ learnerBpro: bin/mainBpro.o bin/Mathematics.o bin/Parameters.o bin/Timer.o bin/F
 learnerRedundant: bin/mainRedundant.o bin/Mathematics.o bin/Parameters.o bin/Timer.o bin/Features.o bin/Background.o bin/BPROFeatures.o bin/RLLearner.o bin/SarsaLearner.o bin/RedundantBPROFeatures.o
 	$(CXX) $(FLAGS) bin/mainRedundant.o bin/Mathematics.o bin/Timer.o bin/Parameters.o bin/Features.o bin/Background.o bin/RedundantBPROFeatures.o bin/RLLearner.o bin/SarsaLearner.o -o learnerRedundant
 
-mainBpro.o: mainBpro.cpp
+bin/mainBpro.o: mainBpro.cpp
 	$(CXX) $(FLAGS) -c mainBpro.cpp -o bin/mainBpro.o
 
-mainRedundant.o: mainRedundant.cpp
+bin/mainRedundant.o: mainRedundant.cpp
 	$(CXX) $(FLAGS) -c mainRedundant.cpp -o bin/mainRedundant.o
 
-Mathematics.o: common/Mathematics.cpp
+bin/Mathematics.o: common/Mathematics.cpp
 	$(CXX) $(FLAGS) -c common/Mathematics.cpp -o bin/Mathematics.o
 
-Timer.o: common/Timer.cpp
+bin/Timer.o: common/Timer.cpp
 	$(CXX) $(FLAGS) -c common/Timer.cpp -o bin/Timer.o
 
-Parameters.o: common/Parameters.cpp
+bin/Parameters.o: common/Parameters.cpp
 	$(CXX) $(FLAGS) -c common/Parameters.cpp -o bin/Parameters.o
 
-Features.o: features/Features.cpp
+bin/Features.o: features/Features.cpp
 	$(CXX) $(FLAGS) -c features/Features.cpp -o bin/Features.o
 
-Background.o: features/Background.cpp
+bin/Background.o: features/Background.cpp
 	$(CXX) $(FLAGS) -c features/Background.cpp -o bin/Background.o
 	
-BPROFeatures.o: features/BPROFeatures.cpp
+bin/BPROFeatures.o: features/BPROFeatures.cpp
 	$(CXX) $(FLAGS) -c features/BPROFeatures.cpp -o bin/BPROFeatures.o	
 	
-RedundantBPROFeatures.o: features/RedundantBPROFeatures.cpp
+bin/RedundantBPROFeatures.o: features/RedundantBPROFeatures.cpp
 	$(CXX) $(FLAGS) -c features/RedundantBPROFeatures.cpp -o bin/RedundantBPROFeatures.o
 
-RLLearner.o: agents/rl/RLLearner.cpp
+bin/RLLearner.o: agents/rl/RLLearner.cpp
 	$(CXX) $(FLAGS) -c agents/rl/RLLearner.cpp -o bin/RLLearner.o
 
-SarsaLearner.o: agents/rl/sarsa/SarsaLearner.cpp
+bin/SarsaLearner.o: agents/rl/sarsa/SarsaLearner.cpp
 	$(CXX) $(FLAGS) -c agents/rl/sarsa/SarsaLearner.cpp -o bin/SarsaLearner.o
 		
 clean:
