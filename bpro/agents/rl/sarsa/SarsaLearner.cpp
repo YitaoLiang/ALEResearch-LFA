@@ -19,8 +19,6 @@
 using namespace std;
 
 SarsaLearner::SarsaLearner(ALEInterface& ale, Features *features, Parameters *param,int seed) : RLLearner(ale, param,seed) {
-    numRand = 0;
-    currentEpisode = 1;
     totalNumberFrames = 0.0;
     
     delta = 0.0;
@@ -42,15 +40,26 @@ SarsaLearner::SarsaLearner(ALEInterface& ale, Features *features, Parameters *pa
 		w.push_back(vector<float>(numFeatures, 0.0));
 		nonZeroElig.push_back(vector<int>());
 	}
-
     
+    episodePassed = 0;
 	if(toSaveCheckPoint){
         checkPointName = param->getCheckPointName();
-    }
+        //load CheckPoint
+        ifstream checkPointToLoad;
+        string checkPointLoadName = checkPointName+"-checkPoint.txt";
+        checkPointToLoad.open(checkPointLoadName.c_str());
+        if (checkPointToLoad.is_open()){
+            loadCheckPoint(checkPointToLoad);
+            remove(checkPointLoadName.c_str());
+        }
+        ofstream learningConditionFile;
+        nameForLearningCondition = checkPointName+"-learningCondition-Episode"+to_string(episodePassed)+"-finished.txt";
+        string previousNameForLearningCondition =checkPointName +"-learningCondition.txt";
+        rename(previousNameForLearningCondition.c_str(), nameForLearningCondition.c_str());
+        learningConditionFile.open(nameForLearningCondition, ios_base::app);
+        learningConditionFile.close();
 
-	/*if(param->getToLoadWeights()){
-		loadWeights();
-	}*/
+    }
 }
 
 SarsaLearner::~SarsaLearner(){}
@@ -139,13 +148,14 @@ void SarsaLearner::sanityCheck(){
 }
 
 //To do: we do not want to save weights that are zero
-/void SarsaLearner::saveWeightsToFile(int episode, int totalNumberFramers, vector<float>& episodeResults,int& frequency){
+void SarsaLearner::saveCheckPoint(int episode, int totalNumberFrames, vector<float>& episodeResults,int& frequency){
     ofstream learningConditionFile;
     string newNameForLearningCondition = checkPointName+"-learningCondition-Episode"+to_string(episode)+"-writing.txt";
     int renameReturnCode = rename(nameForLearningCondition.c_str(),newNameForLearningCondition.c_str());
     if (renameReturnCode == 0){
         nameForLearningCondition = newNameForLearningCondition;
         learningConditionFile.open(nameForLearningCondition.c_str(), ios_base::app);
+        int numEpisode = episodeResults.size();
         for (int index = 0;index<numEpisode;index++){
             learningConditionFile <<"Episode "<<episode-numEpisode+1+index<<": "<<episodeResults[index]<<endl;
         }
@@ -157,9 +167,9 @@ void SarsaLearner::sanityCheck(){
     }
     
     //write parameters checkPoint
-    string checkPointName = checkPointName+"-checkPoint-Episode"+to_string(episode)+"-writing.txt";
+    string currentCheckPointName = checkPointName+"-checkPoint-Episode"+to_string(episode)+"-writing.txt";
     ofstream checkPointFile;
-    checkPointFile.open(checkPointName.c_str());
+    checkPointFile.open(currentCheckPointName.c_str());
     checkPointFile<<agentRand<<endl;
     checkPointFile<<totalNumberFrames<<endl;
     checkPointFile << episode<<endl;
@@ -173,29 +183,23 @@ void SarsaLearner::sanityCheck(){
     checkPointFile.close();
     string previousVersionCheckPoint = checkPointName+"-checkPoint-Episode"+to_string(episode-frequency)+"-finished.txt";
     remove(previousVersionCheckPoint.c_str());
-    string oldCheckPointName = checkPointName;
-    checkPointName.replace(checkPointName.end()-11,checkPointName.end()-4,"finished");
-    rename(oldCheckPointName.c_str(),checkPointName.c_str());
+    string oldCheckPointName = currentCheckPointName;
+    currentCheckPointName.replace(currentCheckPointName.end()-11,currentCheckPointName.end()-4,"finished");
+    rename(oldCheckPointName.c_str(),currentCheckPointName.c_str());
 
 }
 
-//loadWeights need to be changed
-
-void SarsaLearner::loadWeights(){
-	string line;
-	int nActions, nFeatures;
-	int i, j;
-	double value;
-
-	std::ifstream weightsFile (pathWeightsFileToLoad.c_str());
-	
-	weightsFile >> nActions >> nFeatures;
-	assert(nActions == numActions);
-	assert(nFeatures == numFeatures);
-
-	while(weightsFile >> i >> j >> value){
-		w[i][j] = value;
-	}
+void SarsaLearner::loadCheckPoint(ifstream& checkPointToLoad){
+    checkPointToLoad >> agentRand;
+    checkPointToLoad >> totalNumberFrames;
+    checkPointToLoad >> episodePassed;
+    checkPointToLoad >> firstReward;
+    int action, index;
+    float weight;
+    while (checkPointToLoad>>action && checkPointToLoad>>index && checkPointToLoad>>weight){
+        w[action][index] = weight;
+    }
+    checkPointToLoad.close();
 }
 
 void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
@@ -208,9 +212,8 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
 	sawFirstReward = 0; firstReward = 1.0;
 
 	//Repeat (for each episode):
-    int totalNumberFrames=0;
 	//This is going to be interrupted by the ALE code since I set max_num_frames beforehand
-	for(int episode = 1; episode <= 50; episode++){
+	for(int episode = episodePassed+1; episode <= 100; episode++){
 		//We have to clean the traces every episode:
 		for(unsigned int a = 0; a < nonZeroElig.size(); a++){
 			for(unsigned int i = 0; i < nonZeroElig[a].size(); i++){
@@ -284,14 +287,10 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
 		prevCumReward = cumReward;
 		ale.reset_game();
 		if(toSaveCheckPoint && episode%saveWeightsEveryXSteps == 0){
-			saveWeightsToFile(episode,totalNumberFrames,episodeResults,saveWeightsEveryXSteps);
+            cout<<"saving"<<endl;
+			saveCheckPoint(episode,totalNumberFrames,episodeResults,saveWeightsEveryXSteps);
         }
-	}/*
-	if(toSaveWeightsAfterLearning){
-		stringstream ss;
-		ss << episode;
-		saveWeightsToFile(ss.str());
-        }*/
+	}
 }
 
 void SarsaLearner::evaluatePolicy(ALEInterface& ale, Features *features){
@@ -335,4 +334,39 @@ void SarsaLearner::evaluatePolicy(ALEInterface& ale, Features *features){
     resultFile.close();
     rename(oldName.c_str(),newName.c_str());
     
+}
+
+void SarsaLearner::saveWeightsToFile(string suffix){
+    std::ofstream weightsFile ((nameWeightsFile + suffix).c_str());
+    if(weightsFile.is_open()){
+        weightsFile << w.size() << " " << w[0].size() << std::endl;
+        for(unsigned int i = 0; i < w.size(); i++){
+            for(unsigned int j = 0; j < w[i].size(); j++){
+                if(w[i][j] != 0){
+                    weightsFile << i << " " << j << " " << w[i][j] << std::endl;
+                }
+            }
+        }
+        weightsFile.close();
+    }
+    else{
+        printf("Unable to open file to write weights.\n");
+    }
+}
+
+void SarsaLearner::loadWeights(){
+    string line;
+    int nActions, nFeatures;
+    int i, j;
+    double value;
+    
+    std::ifstream weightsFile (pathWeightsFileToLoad.c_str());
+    
+    weightsFile >> nActions >> nFeatures;
+    assert(nActions == numActions);
+    assert(nFeatures == numFeatures);
+    
+    while(weightsFile >> i >> j >> value){
+        w[i][j] = value;
+    }
 }

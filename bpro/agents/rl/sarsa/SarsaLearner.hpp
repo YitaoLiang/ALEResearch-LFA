@@ -24,6 +24,8 @@ class SarsaLearner : public RLLearner{
 		std::string nameWeightsFile, pathWeightsFileToLoad;
         std::string checkPointName;
         std::string nameForLearningCondition;
+        int episodePassed;
+        int totalNumberFrames;
 
 		vector<int> F;					//Set of features active
 		vector<int> Fnext;              //Set of features active in next state
@@ -64,15 +66,17 @@ class SarsaLearner : public RLLearner{
  		* the rule: e[action][i] = gamma * lambda * e[action][i]. It is possible to also define thresholding.
  		*/
 		void updateAcumTrace(int action, vector<int> &Features);
-		/**
- 		* Prints the weights in a file. Each line will contain a weight.
- 		*/
-        void saveWeightsToFile(int episode, int totalNumberFrames, vector<float>& episodeResults, int& frequency);
-		/**
- 		* Loads the weights saved in a file. Each line will contain a weight.
- 		*/		
-		void loadWeights();
-	public:
+        /**
+        * Prints the weights in a file. Each line will contain a weight.
+        */
+        void saveWeightsToFile(string suffix="");
+        /**
+        * Loads the weights saved in a file. Each line will contain a weight.
+        */
+        void loadWeights();
+        void saveCheckPoint(int episode, int totalNumberFrames,  vector<float>& episodeResults, int& frequency);
+        void loadCheckPoint(ifstream& checkPointToLoad);
+    public:
 		SarsaLearner(ALEInterface& ale, Features *features, Parameters *param,int seed);
 		/**
  		* Implementation of an agent controller. This implementation is Sarsa(lambda).
