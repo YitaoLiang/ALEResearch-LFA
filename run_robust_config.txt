@@ -1,2 +1,0 @@
-hostFilePartialDirectory = /Research/bpro/
-permanentCheckPointFrequency = 2000
