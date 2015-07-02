@@ -1,0 +1,9 @@
+training
+Test-Asterix-Trial1	./learnerBpro -s 1 -c bpro.cfg -r /home/yliang/Research/roms/asterix.bin -w Test-Asterix-Trial1
+Test-Asterix-Trial2	./learnerBpro -s 2 -c bpro.cfg -r /home/yliang/Research/roms/asterix.bin -w Test-Asterix-Trial2
+Test-Asterix-Trial3	./learnerBpro -s 3 -c bpro.cfg -r /home/yliang/Research/roms/asterix.bin -w Test-Asterix-Trial3
+Test-Asterix-Trial4	./learnerBpro -s 4 -c bpro.cfg -r /home/yliang/Research/roms/asterix.bin -w Test-Asterix-Trial4
+Test-Asterix-Trial5	./learnerBpro -s 5 -c bpro.cfg -r /home/yliang/Research/roms/asterix.bin -w Test-Asterix-Trial5
+Test-Asterix-Trial6	./learnerBpro -s 6 -c bpro.cfg -r /home/yliang/Research/roms/asterix.bin -w Test-Asterix-Trial6
+Test-Asterix-Trial7	./learnerBpro -s 7 -c bpro.cfg -r /home/yliang/Research/roms/asterix.bin -w Test-Asterix-Trial7
+Test-Asterix-Trial8	./learnerBpro -s 8 -c bpro.cfg -r /home/yliang/Research/roms/asterix.bin -w Test-Asterix-Trial8

@@ -267,10 +267,11 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
 			for(unsigned int a = 0; a < nonZeroElig.size(); a++){
 				for(unsigned int i = 0; i < nonZeroElig[a].size(); i++){
 					int idx = nonZeroElig[a][i];
-                    if (w[a][idx]==0){
+                    if (w[a][idx]==0 && delta!=0){
                         featureSeen[a].push_back(idx);
                     }
 					w[a][idx] = w[a][idx] + (alpha/maxFeatVectorNorm) * delta * e[a][idx];
+                    
 				}
 			}
 			F = Fnext;
@@ -331,7 +332,7 @@ void SarsaLearner::evaluatePolicy(ALEInterface& ale, Features *features){
 		ale.reset_game();
 		prevCumReward = cumReward;
 	}
-    resultFile<<"Average: "<<(double)cumReward/10<<std::endl;
+    resultFile<<"Average: "<<(double)cumReward/500<<std::endl;
     resultFile.close();
     rename(oldName.c_str(),newName.c_str());
     
