@@ -19,7 +19,7 @@ class SarsaLearner : public RLLearner{
 	private:
 		float alpha, delta, lambda, traceThreshold;
 		int numFeatures, currentAction, nextAction;
-		int toSaveWeightsAfterLearning, saveWeightsEveryXSteps, toSaveCheckPoint;
+		int toSaveWeightsAfterLearning, saveWeightsEveryXFrames, toSaveCheckPoint;
 
 		std::string nameWeightsFile, pathWeightsFileToLoad;
         std::string checkPointName;
@@ -27,6 +27,7 @@ class SarsaLearner : public RLLearner{
         int episodePassed;
         int totalNumberFrames;
         unsigned int maxFeatVectorNorm;
+        int saveThreshold;
 
 		vector<int> F;					//Set of features active
 		vector<int> Fnext;              //Set of features active in next state

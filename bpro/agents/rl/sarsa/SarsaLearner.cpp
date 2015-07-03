@@ -21,6 +21,7 @@ using namespace std;
 SarsaLearner::SarsaLearner(ALEInterface& ale, Features *features, Parameters *param,int seed) : RLLearner(ale, param,seed) {
     totalNumberFrames = 0.0;
     maxFeatVectorNorm = 1;
+    saveThreshold =0;
     
     delta = 0.0;
 	alpha = param->getAlpha();
@@ -28,7 +29,7 @@ SarsaLearner::SarsaLearner(ALEInterface& ale, Features *features, Parameters *pa
 	traceThreshold = param->getTraceThreshold();
 	numFeatures = features->getNumberOfFeatures();
     toSaveCheckPoint = param->getToSaveCheckPoint();
-    saveWeightsEveryXSteps = param->getFrequencySavingWeights();
+    saveWeightsEveryXFrames = param->getFrequencySavingWeights();
 	pathWeightsFileToLoad = param->getPathToWeightsFiles();
     featureSeen.resize(numActions);
 	
@@ -53,10 +54,12 @@ SarsaLearner::SarsaLearner(ALEInterface& ale, Features *features, Parameters *pa
             loadCheckPoint(checkPointToLoad);
             remove(checkPointLoadName.c_str());
         }
+        saveThreshold = (totalNumberFrames/saveWeightsEveryXFrames)*saveWeightsEveryXFrames;
         ofstream learningConditionFile;
-        nameForLearningCondition = checkPointName+"-learningCondition-Episode"+to_string(episodePassed)+"-finished.txt";
+        nameForLearningCondition = checkPointName+"-learningCondition-Frames"+to_string(saveThreshold)+"-finished.txt";
         string previousNameForLearningCondition =checkPointName +"-learningCondition.txt";
         rename(previousNameForLearningCondition.c_str(), nameForLearningCondition.c_str());
+        saveThreshold+=saveWeightsEveryXFrames;
         learningConditionFile.open(nameForLearningCondition, ios_base::app);
         learningConditionFile.close();
 
@@ -151,7 +154,7 @@ void SarsaLearner::sanityCheck(){
 //To do: we do not want to save weights that are zero
 void SarsaLearner::saveCheckPoint(int episode, int totalNumberFrames, vector<float>& episodeResults,int& frequency,vector<int>& episodeFrames, vector<double>& episodeFps){
     ofstream learningConditionFile;
-    string newNameForLearningCondition = checkPointName+"-learningCondition-Episode"+to_string(episode)+"-writing.txt";
+    string newNameForLearningCondition = checkPointName+"-learningCondition-Frames"+to_string(saveThreshold)+"-writing.txt";
     int renameReturnCode = rename(nameForLearningCondition.c_str(),newNameForLearningCondition.c_str());
     if (renameReturnCode == 0){
         nameForLearningCondition = newNameForLearningCondition;
@@ -170,7 +173,7 @@ void SarsaLearner::saveCheckPoint(int episode, int totalNumberFrames, vector<flo
     }
     
     //write parameters checkPoint
-    string currentCheckPointName = checkPointName+"-checkPoint-Episode"+to_string(episode)+"-writing.txt";
+    string currentCheckPointName = checkPointName+"-checkPoint-Frames"+to_string(saveThreshold)+"-writing.txt";
     ofstream checkPointFile;
     checkPointFile.open(currentCheckPointName.c_str());
     checkPointFile<<agentRand<<endl;
@@ -185,7 +188,7 @@ void SarsaLearner::saveCheckPoint(int episode, int totalNumberFrames, vector<flo
     }
     checkPointFile << endl;
     checkPointFile.close();
-    string previousVersionCheckPoint = checkPointName+"-checkPoint-Episode"+to_string(episode-frequency)+"-finished.txt";
+    string previousVersionCheckPoint = checkPointName+"-checkPoint-Frames"+to_string(saveThreshold-saveWeightsEveryXFrames)+"-finished.txt";
     remove(previousVersionCheckPoint.c_str());
     string oldCheckPointName = currentCheckPointName;
     currentCheckPointName.replace(currentCheckPointName.end()-11,currentCheckPointName.end()-4,"finished");
@@ -296,8 +299,9 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
 		totalNumberFrames += ale.getEpisodeFrameNumber();
 		prevCumReward = cumReward;
 		ale.reset_game();
-		if(toSaveCheckPoint && episode%saveWeightsEveryXSteps == 0){
-            saveCheckPoint(episode,totalNumberFrames,episodeResults,saveWeightsEveryXSteps,episodeFrames,episodeFps);
+		if(toSaveCheckPoint && totalNumberFrames>saveThreshold){
+            saveCheckPoint(episode,totalNumberFrames,episodeResults,saveWeightsEveryXFrames,episodeFrames,episodeFps);
+            saveThreshold+=saveWeightsEveryXFrames;
         }
 	}
 }
@@ -339,7 +343,7 @@ void SarsaLearner::evaluatePolicy(ALEInterface& ale, Features *features){
 		ale.reset_game();
 		prevCumReward = cumReward;
 	}
-    resultFile<<"Average: "<<(double)cumReward/numEpisodeEval<<std::endl;
+    resultFile<<"Average: "<<(double)cumReward/numEpisodesEval<<std::endl;
     resultFile.close();
     rename(oldName.c_str(),newName.c_str());
     
