@@ -298,6 +298,7 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
         episodeFps.push_back(fps);
 		totalNumberFrames += ale.getEpisodeFrameNumber();
 		prevCumReward = cumReward;
+        features->clearCash();
 		ale.reset_game();
 		if(toSaveCheckPoint && totalNumberFrames>saveThreshold){
             saveCheckPoint(episode,totalNumberFrames,episodeResults,saveWeightsEveryXFrames,episodeFrames,episodeFps);

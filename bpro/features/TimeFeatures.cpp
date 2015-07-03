@@ -211,3 +211,7 @@ void TimeFeatures::resetBproExistence(vector<vector<bool> >& bproExistence, vect
     }
     changed.clear();
 }
+
+void TimeFeatures::clearCash(){
+    previousColors.clear();
+}
