@@ -169,6 +169,7 @@ void TimeFeatures::addTimeOffsetsIndices(vector<vector<tuple<int,int> > > &which
             resetBproExistence(bproExistence,changed);
         }
     }
+    previousColors = whichColors;
 }
 
 
@@ -191,16 +192,17 @@ void TimeFeatures::getActiveFeaturesIndices(const ALEScreen &screen, const ALERA
     //We don't just use the Basic implementation because we need the whichColors information
 	int featureIndex = getBasicFeaturesIndices(screen, blockWidth, blockHeight, whichColors, features);
 	addRelativeFeaturesIndices(screen, featureIndex, whichColors, features);
+
     if (previousColors.size()!=0){
         addTimeOffsetsIndices(whichColors,features);
     }
-
+    
 	//Bias
 	features.push_back(numBasicFeatures+numRelativeFeatures+numTimeDimensionalOffsets);
 }
 
 int TimeFeatures::getNumberOfFeatures(){
-    return numBasicFeatures + numRelativeFeatures + 1;
+    return numBasicFeatures + numRelativeFeatures +numTimeDimensionalOffsets+1;
 }
 
 void TimeFeatures::resetBproExistence(vector<vector<bool> >& bproExistence, vector<tuple<int,int> >& changed){

@@ -22,19 +22,26 @@ ifeq ($(strip $(USE_SDL)), 1)
   LDFLAGS += -lSDL -lSDL_gfx -lSDL_image
 endif
 
-all: learnerBpro learnerRedundant
+all: learnerBpro learnerRedundant learnerTimeoffsets
 
 learnerBpro: bin/mainBpro.o bin/Mathematics.o bin/Parameters.o bin/Timer.o bin/Features.o bin/Background.o bin/BPROFeatures.o bin/RLLearner.o bin/SarsaLearner.o
 	$(CXX) $(FLAGS) bin/mainBpro.o bin/Mathematics.o bin/Timer.o bin/Parameters.o bin/Features.o bin/Background.o bin/BPROFeatures.o bin/RLLearner.o bin/SarsaLearner.o -o learnerBpro
 
-learnerRedundant: bin/mainRedundant.o bin/Mathematics.o bin/Parameters.o bin/Timer.o bin/Features.o bin/Background.o bin/BPROFeatures.o bin/RLLearner.o bin/SarsaLearner.o bin/RedundantBPROFeatures.o
+learnerRedundant: bin/mainRedundant.o bin/Mathematics.o bin/Parameters.o bin/Timer.o bin/Features.o bin/Background.o bin/RLLearner.o bin/SarsaLearner.o bin/RedundantBPROFeatures.o
 	$(CXX) $(FLAGS) bin/mainRedundant.o bin/Mathematics.o bin/Timer.o bin/Parameters.o bin/Features.o bin/Background.o bin/RedundantBPROFeatures.o bin/RLLearner.o bin/SarsaLearner.o -o learnerRedundant
+
+learnerTimeoffsets: bin/mainTimeoffsets.o bin/Mathematics.o bin/Parameters.o bin/Timer.o bin/Features.o bin/Background.o bin/TimeFeatures.o bin/RLLearner.o bin/SarsaLearner.o
+	$(CXX) $(FLAGS) bin/mainTimeoffsets.o bin/Mathematics.o bin/Timer.o bin/Parameters.o bin/Features.o bin/Background.o bin/TimeFeatures.o bin/RLLearner.o bin/SarsaLearner.o -o learnerTimeoffsets
 
 bin/mainBpro.o: mainBpro.cpp
 	$(CXX) $(FLAGS) -c mainBpro.cpp -o bin/mainBpro.o
 
 bin/mainRedundant.o: mainRedundant.cpp
 	$(CXX) $(FLAGS) -c mainRedundant.cpp -o bin/mainRedundant.o
+
+bin/mainTimeoffsets.o: mainTimeoffsets.cpp
+	$(CXX) $(FLAGS) -c mainTimeoffsets.cpp -o bin/mainTimeoffsets.o
+
 
 bin/Mathematics.o: common/Mathematics.cpp
 	$(CXX) $(FLAGS) -c common/Mathematics.cpp -o bin/Mathematics.o
@@ -56,6 +63,9 @@ bin/BPROFeatures.o: features/BPROFeatures.cpp
 	
 bin/RedundantBPROFeatures.o: features/RedundantBPROFeatures.cpp
 	$(CXX) $(FLAGS) -c features/RedundantBPROFeatures.cpp -o bin/RedundantBPROFeatures.o
+
+bin/TimeFeatures.o: features/TimeFeatures.cpp
+	$(CXX) $(FLAGS) -c features/TimeFeatures.cpp -o bin/TimeFeatures.o
 
 bin/RLLearner.o: agents/rl/RLLearner.cpp
 	$(CXX) $(FLAGS) -c agents/rl/RLLearner.cpp -o bin/RLLearner.o

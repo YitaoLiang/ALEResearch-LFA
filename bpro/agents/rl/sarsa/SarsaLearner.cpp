@@ -223,7 +223,7 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
 
 	//Repeat (for each episode):
 	//This is going to be interrupted by the ALE code since I set max_num_frames beforehand
-	for(int episode = episodePassed+1; totalNumberFrames < totalNumberOfFramesToLearn; episode++){
+    for(int episode = episodePassed+1; totalNumberFrames < totalNumberOfFramesToLearn; episode++){
 		//We have to clean the traces every episode:
 		for(unsigned int a = 0; a < nonZeroElig.size(); a++){
 			for(unsigned int i = 0; i < nonZeroElig[a].size(); i++){
