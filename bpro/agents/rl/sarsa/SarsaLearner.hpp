@@ -36,7 +36,7 @@ class SarsaLearner : public RLLearner{
 		vector<vector<float> > w;      //Theta, weights vector
 		vector<vector<int> >nonZeroElig;//To optimize the implementation
         vector<vector<int> > featureSeen;
-        vector<float> episodeResults;
+    
 
 		/**
  		* Constructor declared as private to force the user to instantiate SarsaLearner
@@ -75,7 +75,7 @@ class SarsaLearner : public RLLearner{
         * Loads the weights saved in a file. Each line will contain a weight.
         */
         void loadWeights();
-        void saveCheckPoint(int episode, int totalNumberFrames,  vector<float>& episodeResults, int& frequency);
+        void saveCheckPoint(int episode, int totalNumberFrames,  vector<float>& episodeResults, int& frequency, vector<int>& episodeFrames, vector<double>& episodeFps);
         void loadCheckPoint(ifstream& checkPointToLoad);
     public:
 		SarsaLearner(ALEInterface& ale, Features *features, Parameters *param,int seed);

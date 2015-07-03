@@ -149,7 +149,7 @@ void SarsaLearner::sanityCheck(){
 }
 
 //To do: we do not want to save weights that are zero
-void SarsaLearner::saveCheckPoint(int episode, int totalNumberFrames, vector<float>& episodeResults,int& frequency){
+void SarsaLearner::saveCheckPoint(int episode, int totalNumberFrames, vector<float>& episodeResults,int& frequency,vector<int>& episodeFrames, vector<double>& episodeFps){
     ofstream learningConditionFile;
     string newNameForLearningCondition = checkPointName+"-learningCondition-Episode"+to_string(episode)+"-writing.txt";
     int renameReturnCode = rename(nameForLearningCondition.c_str(),newNameForLearningCondition.c_str());
@@ -158,9 +158,11 @@ void SarsaLearner::saveCheckPoint(int episode, int totalNumberFrames, vector<flo
         learningConditionFile.open(nameForLearningCondition.c_str(), ios_base::app);
         int numEpisode = episodeResults.size();
         for (int index = 0;index<numEpisode;index++){
-            learningConditionFile <<"Episode "<<episode-numEpisode+1+index<<": "<<episodeResults[index]<<endl;
+            learningConditionFile <<"Episode "<<episode-numEpisode+1+index<<": "<<episodeResults[index]<<" points,  "<<episodeFrames[index]<<" frames,  "<<episodeFps[index]<<" fps."<<endl;
         }
         episodeResults.clear();
+        episodeFrames.clear();
+        episodeFps.clear();
         learningConditionFile.close();
         newNameForLearningCondition.replace(newNameForLearningCondition.end()-11,newNameForLearningCondition.end()-4,"finished");
         rename(nameForLearningCondition.c_str(),newNameForLearningCondition.c_str());
@@ -212,10 +214,13 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
 	double elapsedTime;
 	double cumReward = 0, prevCumReward = 0;
 	sawFirstReward = 0; firstReward = 1.0;
+    vector<float> episodeResults;
+    vector<int> episodeFrames;
+    vector<double> episodeFps;
 
 	//Repeat (for each episode):
 	//This is going to be interrupted by the ALE code since I set max_num_frames beforehand
-	for(int episode = episodePassed+1; episode <= 5000; episode++){
+	for(int episode = episodePassed+1; totalNumberFrames < totalNumberOfFramesToLearn; episode++){
 		//We have to clean the traces every episode:
 		for(unsigned int a = 0; a < nonZeroElig.size(); a++){
 			for(unsigned int i = 0; i < nonZeroElig[a].size(); i++){
@@ -286,11 +291,13 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
 			episode, cumReward - prevCumReward, (double)cumReward/(episode),
 			ale.getEpisodeFrameNumber(), fps);
         episodeResults.push_back(cumReward-prevCumReward);
+        episodeFrames.push_back(ale.getEpisodeFrameNumber());
+        episodeFps.push_back(fps);
 		totalNumberFrames += ale.getEpisodeFrameNumber();
 		prevCumReward = cumReward;
 		ale.reset_game();
 		if(toSaveCheckPoint && episode%saveWeightsEveryXSteps == 0){
-            saveCheckPoint(episode,totalNumberFrames,episodeResults,saveWeightsEveryXSteps);
+            saveCheckPoint(episode,totalNumberFrames,episodeResults,saveWeightsEveryXSteps,episodeFrames,episodeFps);
         }
 	}
 }
@@ -308,7 +315,7 @@ void SarsaLearner::evaluatePolicy(ALEInterface& ale, Features *features){
     resultFile.open(oldName.c_str());
     
 	//Repeat (for each episode):
-	for(int episode = 1; episode <= 500; episode++){
+	for(int episode = 1; episode < numEpisodesEval; episode++){
 		//Repeat(for each step of episode) until game is over:
 		for(int step = 0; !ale.game_over() && step < episodeLength; step++){
 			//Get state and features active on that state:		
@@ -332,7 +339,7 @@ void SarsaLearner::evaluatePolicy(ALEInterface& ale, Features *features){
 		ale.reset_game();
 		prevCumReward = cumReward;
 	}
-    resultFile<<"Average: "<<(double)cumReward/500<<std::endl;
+    resultFile<<"Average: "<<(double)cumReward/numEpisodeEval<<std::endl;
     resultFile.close();
     rename(oldName.c_str(),newName.c_str());
     
