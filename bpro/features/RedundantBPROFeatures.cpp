@@ -189,6 +189,6 @@ void RedundantBPROFeatures::getActiveFeaturesIndices(const ALEScreen &screen, co
 	features.push_back(featureIndex);
 }
 
-int RedundantBPROFeatures::getNumberOfFeatures(){
+long long RedundantBPROFeatures::getNumberOfFeatures(){
     return numBasicFeatures + numRelativeFeatures + 1;
 }
