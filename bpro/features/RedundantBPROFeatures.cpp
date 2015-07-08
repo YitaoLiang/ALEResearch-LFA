@@ -41,7 +41,7 @@ RedundantBPROFeatures::RedundantBPROFeatures(Parameters *param){
 RedundantBPROFeatures::~RedundantBPROFeatures(){}
 
 int RedundantBPROFeatures::getBasicFeaturesIndices(const ALEScreen &screen, int blockWidth, int blockHeight,
-	vector<vector<vector<int> > > &whichColors, vector<int>& features){
+	vector<vector<vector<int> > > &whichColors, vector<long long>& features){
 	int featureIndex = 0;
 	// For each pixel block
 	for (int by = 0; by < numRows; by++) {
@@ -83,8 +83,8 @@ int RedundantBPROFeatures::getBasicFeaturesIndices(const ALEScreen &screen, int 
 	return featureIndex;
 }
 
-void RedundantBPROFeatures::addRelativeFeaturesIndices(const ALEScreen &screen, int featureIndex,
-	vector<vector<vector<int> > > &whichColors, vector<int>& features){
+void RedundantBPROFeatures::addRelativeFeaturesIndices(const ALEScreen &screen, long long featureIndex,
+	vector<vector<vector<int> > > &whichColors, vector<long long>& features){
 
 	int numRowOffsets = 2*numRows - 1;
 	int numColumnOffsets = 2*numColumns - 1;
@@ -165,7 +165,7 @@ void RedundantBPROFeatures::addRelativeFeaturesIndices(const ALEScreen &screen, 
 	}
 }
 
-void RedundantBPROFeatures::getActiveFeaturesIndices(const ALEScreen &screen, const ALERAM &ram, vector<int>& features){
+void RedundantBPROFeatures::getActiveFeaturesIndices(const ALEScreen &screen, const ALERAM &ram, vector<long long>& features){
 	int screenWidth = screen.width();
 	int screenHeight = screen.height();
 	int blockWidth = screenWidth / numColumns;
@@ -189,6 +189,6 @@ void RedundantBPROFeatures::getActiveFeaturesIndices(const ALEScreen &screen, co
 	features.push_back(featureIndex);
 }
 
-int RedundantBPROFeatures::getNumberOfFeatures(){
+long long RedundantBPROFeatures::getNumberOfFeatures(){
     return numBasicFeatures + numRelativeFeatures + 1;
 }
