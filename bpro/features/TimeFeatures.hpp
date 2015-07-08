@@ -41,7 +41,7 @@ class TimeFeatures : public Features::Features{
 		void addRelativeFeaturesIndices(const ALEScreen &screen, long long featureIndex,
             vector<vector<tuple<int,int> > > &whichColors, vector<long long>& features);
     void addTimeOffsetsIndices(vector<vector<tuple<int,int> > >& whichColors, vector<long long>& features);
-    void addThreePointOffsetsIndices(int c1, int c2, tuple<int,int> offset, tuple<int,int> p1, vector<long long>& features, long long index);
+    void addThreePointOffsetsIndices(tuple<int,int> p1, vector<long long>& features, long long index);
     void resetBproExistence(vector<vector<bool> >& existence, vector<tuple<int,int> >& changed);
 	public:
 		/**

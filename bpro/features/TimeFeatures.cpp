@@ -131,8 +131,8 @@ void TimeFeatures::addRelativeFeaturesIndices(const ALEScreen &screen, long long
                     bproChanged.push_back(pos);
                     bproExistence[rowDelta][columnDelta]=false;
                     features.push_back(numBasicFeatures+(numColors+numColors-c1+1)*c1/2*numRowOffsets*numColumnOffsets+rowDelta*numColumnOffsets+columnDelta);
-                    if (previousColors.size()!=0){
-                        addThreePointOffsetsIndices(c1,c1,pos,whichColors[c1][k],features,features[-1]);
+                    if (previousColors.size()==numColors){
+                        addThreePointOffsetsIndices(whichColors[c1][k],features,features.back());
                         resetBproExistence(threePointExistence,threePointChanged);
                     }
                     
@@ -140,20 +140,20 @@ void TimeFeatures::addRelativeFeaturesIndices(const ALEScreen &screen, long long
             }
         }
         resetBproExistence(bproExistence,bproChanged);
-
         for (int c2=c1+1;c2<numColors;c2++){
             if (whichColors[c1].size()>0 && whichColors[c2].size()>0){
-                for (vector<tuple<int,int> >::iterator it1=whichColors[c1].begin();it1!=whichColors[c1].end();it1++){
-                    for (vector<tuple<int,int> >::iterator it2=whichColors[c2].begin();it2!=whichColors[c2].end();it2++){
-                        int rowDelta = get<0>(*it1)-get<0>(*it2)+numRows-1;
-                        int columnDelta = get<1>(*it1)-get<1>(*it2)+numColumns-1;
+                for (int it1=0;it1<whichColors[c1].size();it1++){
+                    for (int it2=0;it2<whichColors[c2].size();it2++){
+                        int rowDelta = get<0>(whichColors[c1][it1])-get<0>(whichColors[c2][it2])+numRows-1;
+                        int columnDelta = get<1>(whichColors[c1][it1])-get<1>(whichColors[c2][it2])+numColumns-1;
                         if (bproExistence[rowDelta][columnDelta]){
                             tuple<int,int> pos(rowDelta,columnDelta);
                             bproChanged.push_back(pos);
                             bproExistence[rowDelta][columnDelta]=false;
-                            features.push_back(numBasicFeatures+(numColors+numColors-c1+1)*c1/2*numRowOffsets*numColumnOffsets+(c2-c1)*numRowOffsets*numColumnOffsets+rowDelta*numColumnOffsets+columnDelta);
-                            if (previousColors.size()!=0){
-                                addThreePointOffsetsIndices(c1,c2,pos,*it2,features,features[-1]);
+                            long long index=numBasicFeatures+(long long)((numColors+numColors-c1+1)*c1/2*numRowOffsets*numColumnOffsets)+(long long)((c2-c1)*numRowOffsets*numColumnOffsets)+(long long)rowDelta*numColumnOffsets+(long long)columnDelta;
+                            features.push_back(index);
+                            if (previousColors.size()==numColors){
+                                addThreePointOffsetsIndices(whichColors[c2][it2],features,index);
                                 resetBproExistence(threePointExistence,threePointChanged);
                             }
                         }
@@ -187,22 +187,22 @@ void TimeFeatures::addTimeOffsetsIndices(vector<vector<tuple<int,int> > > &which
             resetBproExistence(bproExistence,bproChanged);
         }
     }
-    previousColors = whichColors;
 }
 
-void TimeFeatures::addThreePointOffsetsIndices(int c1, int c2, tuple<int,int> offset, tuple<int,int> p1, vector<long long>& features, long long index){
+void TimeFeatures::addThreePointOffsetsIndices(tuple<int,int> p1, vector<long long>& features, long long index){
     long long numRowOffsets = 2*numRows - 1;
     long long numColumnOffsets = 2*numColumns - 1;
+    
     for (int c3=0;c3<numColors;c3++){
         if (previousColors[c3].size()>0){
-            for (vector<tuple<int,int> >::iterator it = previousColors[c3].begin();it!=previousColors[c3].end();c3++){
+            for (vector<tuple<int,int> >::iterator it = previousColors[c3].begin();it!=previousColors[c3].end();it++){
                 int rowDelta = get<0>(p1)-get<0>(*it)+numRows-1;
                 int columnDelta = get<1>(p1)-get<1>(*it)+numColumns-1;
                 if (threePointExistence[rowDelta][columnDelta]){
                     tuple<int,int> pos(rowDelta,columnDelta);
                     threePointChanged.push_back(pos);
                     threePointExistence[rowDelta][columnDelta]=false;
-                    features.push_back(numBasicFeatures+numRelativeFeatures+numTimeDimensionalOffsets+index*numColors*numRowOffsets*numColumnOffsets+c3*numRowOffsets*numColumnOffsets+rowDelta*numColumnOffsets+columnDelta);
+                    features.push_back(numBasicFeatures+numRelativeFeatures+numTimeDimensionalOffsets+index*(long long)numColors*numRowOffsets*numColumnOffsets+(long long)c3*numRowOffsets*numColumnOffsets+(long long)rowDelta*numColumnOffsets+(long long)columnDelta);
                 }
                 
             }
@@ -229,12 +229,10 @@ void TimeFeatures::getActiveFeaturesIndices(const ALEScreen &screen, const ALERA
     //We don't just use the Basic implementation because we need the whichColors information
 	int featureIndex = getBasicFeaturesIndices(screen, blockWidth, blockHeight, whichColors, features);
 	addRelativeFeaturesIndices(screen, featureIndex, whichColors, features);
-
-    /*
-    if (previousColors.size()!=0){
+    if (previousColors.size()==numColors){
         addTimeOffsetsIndices(whichColors,features);
-        }*/
-    
+        }
+    previousColors = whichColors;
 	//Bias
 	features.push_back(numBasicFeatures+numRelativeFeatures+numTimeDimensionalOffsets+numThreePointOffsets);
 }
