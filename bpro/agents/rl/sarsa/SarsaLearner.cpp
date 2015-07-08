@@ -69,9 +69,12 @@ SarsaLearner::~SarsaLearner(){}
 
 void SarsaLearner::updateQValues(vector<long long> &Features, vector<float> &QValues){
 	for(int a = 0; a < numActions; a++){
-		double sumW = 0;
+		float sumW = 0;
 		for(unsigned long long i = 0; i < Features.size(); i++){
-			sumW += w[a][Features[i]];
+            auto got = w[a].find(Features[i]);
+            if (got!=w[a].end()){
+                sumW += w[a][Features[i]];
+            }
 		}
 		QValues[a] = sumW;
 	}
@@ -81,7 +84,7 @@ void SarsaLearner::updateReplTrace(int action, vector<long long> &Features){
 	//e <- gamma * lambda * e
 	for(unsigned int a = 0; a < e.size(); a++){
         for (auto it=e[a].begin();it!=e[a].end();){
-            it->second = gamma*lambda;
+            it->second = it->second*gamma*lambda;
             if (it->second<traceThreshold){
                 it = e[a].erase(it);
             }else{
@@ -91,7 +94,7 @@ void SarsaLearner::updateReplTrace(int action, vector<long long> &Features){
     }
 	//For all i in Fa:
 	for(unsigned int i = 0; i < F.size(); i++){
-		int idx = Features[i];
+		long long idx = Features[i];
 		//If the trace is zero it is not in the vector
 		//of non-zeros, thus it needs to be added
 		e[action][idx] = 1;
@@ -112,7 +115,7 @@ void SarsaLearner::updateAcumTrace(int action, vector<long long> &Features){
     }
 	//For all i in Fa:
 	for(unsigned int i = 0; i < F.size(); i++){
-		int idx = Features[i];
+		long long idx = Features[i];
 		//If the trace is zero it is not in the vector
 		//of non-zeros, thus it needs to be added
         auto got = e[action].find(idx);
@@ -252,9 +255,9 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
 
 			updateReplTrace(currentAction, F);
 			//Update weights vector:
-			for(unsigned int a = 0; a < e[a].size(); a++){
+			for(unsigned int a = 0; a < e.size(); a++){
 				for(auto it=e[a].begin();it!=e[a].end();it++){
-					int idx = it->first;
+					long long idx = it->first;
                     float changeAmount = (alpha/maxFeatVectorNorm)*delta*it->second;
                     if (changeAmount!=0){
                         auto got = w[a].find(idx);
