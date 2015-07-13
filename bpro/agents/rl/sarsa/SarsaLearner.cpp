@@ -209,6 +209,8 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
 
 	//Repeat (for each episode):
 	//This is going to be interrupted by the ALE code since I set max_num_frames beforehand
+    //cout<<totalNumberFrames<<endl;
+    
     for(int episode = episodePassed+1; totalNumberFrames < totalNumberOfFramesToLearn; episode++){
 		//We have to clean the traces every episode:
 		for(unsigned int a = 0; a < e.size(); a++){
@@ -327,7 +329,7 @@ void SarsaLearner::evaluatePolicy(ALEInterface& ale, Features *features){
         resultFile<<"Episode "<<episode<<": "<<cumReward-prevCumReward<<std::endl;
 		printf("episode: %d,\t%.0f points,\tavg. return: %.1f,\t%d frames,\t%.0f fps\n", 
 			episode, (cumReward-prevCumReward), (double)cumReward/(episode), ale.getEpisodeFrameNumber(), fps);
-
+        features->clearCash();
 		ale.reset_game();
 		prevCumReward = cumReward;
 	}
