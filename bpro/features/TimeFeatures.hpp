@@ -32,8 +32,10 @@ class TimeFeatures : public Features::Features{
         int numColumns, numRows, numColors;
         long long numTimeDimensionalOffsets;
         long long numThreePointOffsets;
-        vector<vector<bool> > bproExistence, threePointExistence;
-        vector<tuple<int,int> > bproChanged, threePointChanged;
+        vector<vector<bool> > bproExistence;
+        vector<tuple<int,int> > bproChanged;
+        vector<vector<vector<vector<bool> > > > threePointExistence;
+        vector<tuple<int,int,int,int> > threePointChanged;
         vector<vector<tuple<int,int> > > previousColors;
     
         int getBasicFeaturesIndices(const ALEScreen &screen, int blockWidth, int blockHeight,
@@ -41,7 +43,7 @@ class TimeFeatures : public Features::Features{
 		void addRelativeFeaturesIndices(const ALEScreen &screen, long long featureIndex,
             vector<vector<tuple<int,int> > > &whichColors, vector<long long>& features);
     void addTimeOffsetsIndices(vector<vector<tuple<int,int> > >& whichColors, vector<long long>& features);
-    void addThreePointOffsetsIndices(tuple<int,int> p1, vector<long long>& features, long long index);
+    void addThreePointOffsetsIndices(tuple<int,int> offset, tuple<int,int> p1, vector<long long>& features, long long index);
     void resetBproExistence(vector<vector<bool> >& existence, vector<tuple<int,int> >& changed);
 	public:
 		/**
