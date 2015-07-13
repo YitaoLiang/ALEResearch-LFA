@@ -34,8 +34,8 @@ class TimeFeatures : public Features::Features{
         long long numThreePointOffsets;
         vector<vector<bool> > bproExistence;
         vector<tuple<int,int> > bproChanged;
-        vector<vector<vector<vector<bool> > > > threePointExistence;
-        vector<tuple<int,int,int,int> > threePointChanged;
+        vector<vector<vector<vector<vector<bool> > > > > threePointExistence;
+        vector<tuple<int,int,int,int,int> > threePointChanged;
         vector<vector<tuple<int,int> > > previousColors;
     
         int getBasicFeaturesIndices(const ALEScreen &screen, int blockWidth, int blockHeight,
@@ -45,6 +45,7 @@ class TimeFeatures : public Features::Features{
     void addTimeOffsetsIndices(vector<vector<tuple<int,int> > >& whichColors, vector<long long>& features);
     void addThreePointOffsetsIndices(tuple<int,int> offset, tuple<int,int> p1, vector<long long>& features, long long index);
     void resetBproExistence(vector<vector<bool> >& existence, vector<tuple<int,int> >& changed);
+    void resetThreePointExistence();
 	public:
 		/**
 		* Destructor, used to delete the background, which is allocated dynamically.
