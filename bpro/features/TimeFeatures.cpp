@@ -38,7 +38,7 @@ TimeFeatures::TimeFeatures(Parameters *param){
     numBasicFeatures = this->param->getNumColumns() * this->param->getNumRows() * this->param->getNumColors();
 	numRelativeFeatures = (2 * this->param->getNumColumns() - 1) * (2 * this->param->getNumRows() - 1) 
 							* (1+this->param->getNumColors()) * this->param->getNumColors()/2;
-    numTimeDimensionalOffsets = this->param->getNumColumns() * this->param->getNumColors() *(2 * this->param->getNumColumns() - 1) * (2 * this->param->getNumRows() - 1) ;
+    numTimeDimensionalOffsets = this->param->getNumColors() * this->param->getNumColors() *(2 * this->param->getNumColumns() - 1) * (2 * this->param->getNumRows() - 1) ;
     numThreePointOffsets = numRelativeFeatures * this->param->getNumColors() * (2 * this->param->getNumColumns() - 1) * (2 * this->param->getNumRows() - 1);
     bproChanged.clear();
     bproExistence.resize(2*numRows-1);
