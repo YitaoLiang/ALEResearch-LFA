@@ -205,8 +205,7 @@ void TimeFeatures::addThreePointOffsetsIndices(tuple<int,int> offset, tuple<int,
     long long numColumnOffsets = 2*numColumns - 1;
     
     for (int c3=0;c3<numColors;c3++){
-        if (previousColors[c3].size()>0){
-            for (vector<tuple<int,int> >::iterator it = previousColors[c3].begin();it!=previousColors[c3].end();it++){
+            for (vector<tuple<int,int> >::iterator it = whichColors[c3].begin();it!=whichColors[c3].end();it++){
                 int rowDelta = get<0>(p1)-get<0>(*it)+numRows-1;
                 int columnDelta = get<1>(p1)-get<1>(*it)+numColumns-1;
                 if (threePointExistence[get<0>(offset)][get<1>(offset)][c3][rowDelta][columnDelta]){
@@ -218,7 +217,6 @@ void TimeFeatures::addThreePointOffsetsIndices(tuple<int,int> offset, tuple<int,
                 
             }
         }
-    }
 }
 
 void TimeFeatures::getActiveFeaturesIndices(const ALEScreen &screen, const ALERAM &ram, vector<long long>& features){
