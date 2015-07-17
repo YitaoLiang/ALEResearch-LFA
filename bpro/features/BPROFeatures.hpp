@@ -21,20 +21,16 @@
 
 using namespace std;
 
-class BPROFeatures : public Features::Features{
+class BlobBproFeatures : public Features::Features{
 	private:
 		Parameters *param;
 		Background *background;
 		
 		int numBasicFeatures;
-    	int numRelativeFeatures;
-    	int rowLess0Shift, row0Shift, rowMore0Shift;
+        int numRelativeFeatures;
         int numColumns, numRows, numColors;
-        vector<vector<bool> > bproExistence;
-        vector<tuple<int,int> > changed;
-    
-        int getBasicFeaturesIndices(const ALEScreen &screen, int blockWidth, int blockHeight,
-            vector<vector<tuple<int,int> > > &whichColors, vector<long long>& features);
+        
+    void getBlobs(const ALEScreen &screen)
 		void addRelativeFeaturesIndices(const ALEScreen &screen, long long featureIndex,
             vector<vector<tuple<int,int> > > &whichColors, vector<long long>& features);
     void resetBproExistence(vector<vector<bool> >& bproExistence, vector<tuple<int,int> >& changed);
@@ -42,7 +38,7 @@ class BPROFeatures : public Features::Features{
 		/**
 		* Destructor, used to delete the background, which is allocated dynamically.
 		*/
-		~BPROFeatures();
+		~BlobBproFeatures();
 		/**
  		* TODO: COMMENT
  		* 
@@ -50,7 +46,7 @@ class BPROFeatures : public Features::Features{
  		*                   number of colors and the background information
  		* @return nothing, it is a constructor.
  		*/
-		BPROFeatures(Parameters *param);
+		BlobBproFeatures(Parameters *param);
 		/**
  		* This method is the instantiation of the virtual method in the class Features (also check
  		* its documentation). It iterates over all tiles defined by the columns and rows and checks
