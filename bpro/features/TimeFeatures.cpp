@@ -142,9 +142,7 @@ void TimeFeatures::addRelativeFeaturesIndices(const ALEScreen &screen, long long
                     features.push_back(numBasicFeatures+(numColors+numColors-c1+1)*c1/2*numRowOffsets*numColumnOffsets+rowDelta*numColumnOffsets+columnDelta);
                 }
                 long long index=numBasicFeatures+(long long)((numColors+numColors-c1+1)*c1/2*numRowOffsets*numColumnOffsets)+(long long)rowDelta*numColumnOffsets+(long long)columnDelta;
-                if (previousColors.size()==numColors){
-                    addThreePointOffsetsIndices(pos,whichColors[c1][k],features,index);
-                }
+                addThreePointOffsetsIndices(pos,whichColors[c1][k],features,index,whichColors);
 
             }
         }
@@ -164,9 +162,8 @@ void TimeFeatures::addRelativeFeaturesIndices(const ALEScreen &screen, long long
                             bproExistence[rowDelta][columnDelta]=false;
                             features.push_back(index);
                         }
-                        if (previousColors.size()==numColors){
-                            addThreePointOffsetsIndices(pos,whichColors[c2][it2],features,index);
-                        }
+                        addThreePointOffsetsIndices(pos,whichColors[c2][it2],features,index,whichColors);
+                        
                     }
                 }
             }
@@ -200,7 +197,7 @@ void TimeFeatures::addTimeOffsetsIndices(vector<vector<tuple<int,int> > > &which
     }
 }
 
-void TimeFeatures::addThreePointOffsetsIndices(tuple<int,int> offset, tuple<int,int> p1, vector<long long>& features, long long index){
+void TimeFeatures::addThreePointOffsetsIndices(tuple<int,int> offset, tuple<int,int> p1, vector<long long>& features, long long index,vector<vector<tuple<int,int> > > &whichColors){
     long long numRowOffsets = 2*numRows - 1;
     long long numColumnOffsets = 2*numColumns - 1;
     
