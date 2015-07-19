@@ -18,6 +18,7 @@
 #endif
 
 #include <tuple>
+#include <set>
 #include <unordered_map>
 
 struct Disjoint_Set_Element{
@@ -36,15 +37,18 @@ class BlobBproFeatures : public Features::Features{
         int numRelativeFeatures;
         int numColumns, numRows, numColors;
     
-        vector<Disjoint_Set> representativePixels;
+        vector<Disjoint_Set_Element> representativePixels;
         unordered_map<int,set<tuple<int,int> > > blobs;
     
-    void getBlobs(const ALEScreen &screen)
-		void addRelativeFeaturesIndices(const ALEScreen &screen, long long featureIndex,
-            vector<vector<tuple<int,int> > > &whichColors, vector<long long>& features);
+        vector<vector<bool> > bproExistence;
+        vector<tuple<int,int> > changed;
+    
+    void getBlobs(const ALEScreen &screen);
+		void addRelativeFeaturesIndices(const ALEScreen &screen,vector<long long>& features);
     void resetBproExistence(vector<vector<bool> >& bproExistence, vector<tuple<int,int> >& changed);
-    void BlobBproFeatures::addNewBlob(unordered_map<int,set<int> >& blobIndices,vector<vector<int> >& screenPixels, vector<Disjoint_Set_Element>& disjoint_set, tuple<int,int>& pos);
-    int BlobBproFeatures::getPowerTwoOffset(int rawDelta);
+    void addNewBlob(unordered_map<int,set<int> >& blobIndices,vector<vector<int> >& screenPixels, vector<Disjoint_Set_Element>& disjoint_set, unordered_map<int,int>& disjoint_set_indices,tuple<int,int>& pos,int color);
+    void mergeDisjointSet(set<int>& route, vector<Disjoint_Set_Element>& disjoint_set, int representativeIndex);
+    int getPowerTwoOffset(int rawDelta);
 	public:
 		/**
 		* Destructor, used to delete the background, which is allocated dynamically.

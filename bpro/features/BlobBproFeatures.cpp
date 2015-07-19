@@ -36,7 +36,16 @@ BlobBproFeatures::BlobBproFeatures(Parameters *param){
 
 	//To get the total number of features:
   
-    numRelativeFeatures = (2 * (int)ceil(log2(screen.width)) + 1) * (2 * (int)ceil(log2(screen.height)) + 1)* (1+this->param->getNumColors()) * this->param->getNumColors()/2;
+    numRelativeFeatures = (2 * 8 + 1) * (2 * 8 + 1)* (1+this->param->getNumColors()) * this->param->getNumColors()/2;
+    
+    changed.clear();
+    bproExistence.resize(2*8+1);
+    for (int i=0;i<2*8+1;i++){
+        bproExistence[i].resize(2*8+1);
+        for (int j=0;j<2*8+1;j++){
+            bproExistence[i][j]=true;
+        }
+    }
 }
 
 BlobBproFeatures::~BlobBproFeatures(){}
@@ -49,8 +58,8 @@ void BlobBproFeatures::getBlobs(const ALEScreen &screen){
     vector<vector<int> > screenPixels(screenHeight,vector<int>(screenWidth,0));
    
      vector<tuple<int,int> > neighbors;
-    for (xDelta=-2;xDelta<0;xDelta++){
-        for (yDelta=-2;yDelta<=2;yDelta++){
+    for (int xDelta=-2;xDelta<0;xDelta++){
+        for (int yDelta=-2;yDelta<=2;yDelta++){
             neighbors.push_back(make_tuple(xDelta,yDelta));
         }
     }
@@ -85,7 +94,7 @@ void BlobBproFeatures::getBlobs(const ALEScreen &screen){
             
             //case 1: it is the first pixel in this blob
             if (possibleBlobs.size()==0){
-                addNewBlob(blobIndices, screenPixels, disjoint_set,disjoint_set_indices,pos);
+                addNewBlob(blobIndices, screenPixels, disjoint_set,disjoint_set_indices,pos,color/2);
                 screenPixels[x][y]=disjoint_set.size()-1;
             
             //case 2: it belongs to some blob
@@ -98,9 +107,9 @@ void BlobBproFeatures::getBlobs(const ALEScreen &screen){
                 }
                 auto found = possibleBlobs.find(representative);
                 if (found==possibleBlobs.end() || *found==pos){
-                    addNewBlob(blobIndices, screenPixels, disjoint_set,disjoint_set_indices,representative);
+                    addNewBlob(blobIndices, screenPixels, disjoint_set,disjoint_set_indices,representative,color/2);
                     screenPixels[x][y]=disjoint_set.size()-1;
-                    mergeDisjointSet(route,disjoint_set,disjoint_set.size()-1);
+                    mergeDisjointSet(route,disjoint_set,(int)disjoint_set.size()-1);
                 }else{
                     screenPixels[x][y] = disjoint_set_indices[get<0>(*found)*1000+get<1>(*found)];
                     mergeDisjointSet(route,disjoint_set,disjoint_set_indices[get<0>(*found)*1000+get<1>(*found)]);
@@ -117,7 +126,9 @@ void BlobBproFeatures::getBlobs(const ALEScreen &screen){
     }
 }
 
-void BlobBproFeatures::addRelativeFeaturesIndices(const ALEScreen &screen){
+void BlobBproFeatures::addRelativeFeaturesIndices(const ALEScreen &screen,vector<long long>& features){
+    int numRowOffsets = 2*8 + 1;
+    int numColumnOffsets = 2*8+ 1;
     for (int c1=0;c1<numColors;c1++){
         if (blobs[c1].size()>0){
             for (auto k=blobs[c1].begin();k!=blobs[c1].end();k++){
@@ -170,7 +181,7 @@ void BlobBproFeatures::getActiveFeaturesIndices(const ALEScreen &screen, const A
 	
     blobs.clear();
     getBlobs(screen);
-    addRelativeFeaturesIndices(screen);
+    addRelativeFeaturesIndices(screen,features);
 }
 
 long long BlobBproFeatures::getNumberOfFeatures(){
@@ -184,7 +195,7 @@ void BlobBproFeatures::resetBproExistence(vector<vector<bool> >& bproExistence, 
     changed.clear();
 }
 
-void BlobBproFeatures::addNewBlob(unordered_map<int,set<int> >& blobIndices,vector<vector<int> >& screenPixels, vector<Disjoint_Set_Element>& disjoint_set, unordered_map<int,int>&disjoint_set_indices, tuple<int,int>& pos){
+void BlobBproFeatures::addNewBlob(unordered_map<int,set<int> >& blobIndices,vector<vector<int> >& screenPixels, vector<Disjoint_Set_Element>& disjoint_set, unordered_map<int,int>&disjoint_set_indices, tuple<int,int>& pos, int color){
     blobIndices[color].insert(disjoint_set.size());
     Disjoint_Set_Element element;
     element.pos = pos;
@@ -193,7 +204,7 @@ void BlobBproFeatures::addNewBlob(unordered_map<int,set<int> >& blobIndices,vect
     disjoint_set.push_back(element);
 }
 
-void BlobBproFeatures::mergeDisjointSet(set<int>& route, vector<Disjoint_Set_Element>& disjoint_set, int & representativeIndex){
+void BlobBproFeatures::mergeDisjointSet(set<int>& route, vector<Disjoint_Set_Element>& disjoint_set, int representativeIndex){
     for (auto it=route.begin();it!=route.end();it++){
         int posIndex = *it;
         while (disjoint_set[posIndex].parent!=posIndex && disjoint_set[posIndex].parent!=representativeIndex){

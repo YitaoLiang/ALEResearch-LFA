@@ -27,7 +27,7 @@ all: learnerBlobBpro
 learnerBlobBpro: bin/mainBlobBpro.o bin/Mathematics.o bin/Parameters.o bin/Timer.o bin/Features.o bin/Background.o bin/BlobBproFeatures.o bin/RLLearner.o bin/SarsaLearner.o
 	$(CXX) $(FLAGS) bin/mainBlobBpro.o bin/Mathematics.o bin/Timer.o bin/Parameters.o bin/Features.o bin/Background.o bin/BlobBproFeatures.o bin/RLLearner.o bin/SarsaLearner.o -o learnerBlobBpro
 
-bin/mainBpro.o: mainBlobBpro.cpp
+bin/mainBlobBpro.o: mainBlobBpro.cpp
 	$(CXX) $(FLAGS) -c mainBlobBpro.cpp -o bin/mainBlobBpro.o
 
 bin/Mathematics.o: common/Mathematics.cpp
