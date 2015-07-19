@@ -17,7 +17,13 @@
 #include "Background.hpp"
 #endif
 
-#include<tuple>
+#include <tuple>
+#include <unordered_map>
+
+struct Disjoint_Set_Element{
+    tuple<int,int> pos;
+    int parent;
+};
 
 using namespace std;
 
@@ -29,11 +35,16 @@ class BlobBproFeatures : public Features::Features{
 		int numBasicFeatures;
         int numRelativeFeatures;
         int numColumns, numRows, numColors;
-        
+    
+        vector<Disjoint_Set> representativePixels;
+        unordered_map<int,set<tuple<int,int> > > blobs;
+    
     void getBlobs(const ALEScreen &screen)
 		void addRelativeFeaturesIndices(const ALEScreen &screen, long long featureIndex,
             vector<vector<tuple<int,int> > > &whichColors, vector<long long>& features);
     void resetBproExistence(vector<vector<bool> >& bproExistence, vector<tuple<int,int> >& changed);
+    void BlobBproFeatures::addNewBlob(unordered_map<int,set<int> >& blobIndices,vector<vector<int> >& screenPixels, vector<Disjoint_Set_Element>& disjoint_set, tuple<int,int>& pos);
+    int BlobBproFeatures::getPowerTwoOffset(int rawDelta);
 	public:
 		/**
 		* Destructor, used to delete the background, which is allocated dynamically.
