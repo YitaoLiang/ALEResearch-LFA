@@ -22,13 +22,13 @@ ifeq ($(strip $(USE_SDL)), 1)
   LDFLAGS += -lSDL -lSDL_gfx -lSDL_image
 endif
 
-all: learnerBpro
+all: learnerBlobBpro
 
-learnerBpro: bin/mainBpro.o bin/Mathematics.o bin/Parameters.o bin/Timer.o bin/Features.o bin/Background.o bin/BPROFeatures.o bin/RLLearner.o bin/SarsaLearner.o
-	$(CXX) $(FLAGS) bin/mainBpro.o bin/Mathematics.o bin/Timer.o bin/Parameters.o bin/Features.o bin/Background.o bin/BPROFeatures.o bin/RLLearner.o bin/SarsaLearner.o -o learnerBpro
+learnerBlobBpro: bin/mainBlobBpro.o bin/Mathematics.o bin/Parameters.o bin/Timer.o bin/Features.o bin/Background.o bin/BlobBproFeatures.o bin/RLLearner.o bin/SarsaLearner.o
+	$(CXX) $(FLAGS) bin/mainBlobBpro.o bin/Mathematics.o bin/Timer.o bin/Parameters.o bin/Features.o bin/Background.o bin/BlobBproFeatures.o bin/RLLearner.o bin/SarsaLearner.o -o learnerBlobBpro
 
-bin/mainBpro.o: mainBpro.cpp
-	$(CXX) $(FLAGS) -c mainBpro.cpp -o bin/mainBpro.o
+bin/mainBpro.o: mainBlobBpro.cpp
+	$(CXX) $(FLAGS) -c mainBlobBpro.cpp -o bin/mainBlobBpro.o
 
 bin/Mathematics.o: common/Mathematics.cpp
 	$(CXX) $(FLAGS) -c common/Mathematics.cpp -o bin/Mathematics.o
@@ -45,8 +45,8 @@ bin/Features.o: features/Features.cpp
 bin/Background.o: features/Background.cpp
 	$(CXX) $(FLAGS) -c features/Background.cpp -o bin/Background.o
 	
-bin/BPROFeatures.o: features/BPROFeatures.cpp
-	$(CXX) $(FLAGS) -c features/BPROFeatures.cpp -o bin/BPROFeatures.o	
+bin/BlobBproFeatures.o: features/BlobBproFeatures.cpp
+	$(CXX) $(FLAGS) -c features/BlobBproFeatures.cpp -o bin/BlobBproFeatures.o	
 	
 bin/RLLearner.o: agents/rl/RLLearner.cpp
 	$(CXX) $(FLAGS) -c agents/rl/RLLearner.cpp -o bin/RLLearner.o

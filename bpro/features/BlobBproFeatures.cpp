@@ -147,9 +147,9 @@ void BlobBproFeatures::addRelativeFeaturesIndices(const ALEScreen &screen){
         }
         
         for (int c2=c1+1;c2<numColors;c2++){
-            if (whichColors[c1].size()>0 && whichColors[c2].size()>0){
-                for (vector<tuple<int,int> >::iterator it1=whichColors[c1].begin();it1!=whichColors[c1].end();it1++){
-                    for (vector<tuple<int,int> >::iterator it2=whichColors[c2].begin();it2!=whichColors[c2].end();it2++){
+            if (blobs[c1].size()>0 && blobs[c2].size()>0){
+                for (auto it1=blobs[c1].begin();it1!=blobs[c1].end();it1++){
+                    for (auto it2=blobs[c2].begin();it2!=blobs[c2].end();it2++){
                         int rowDelta = getPowerTwoOffset(get<0>(*it1)-get<0>(*it2))+8;
                         int columnDelta = getPowerTwoOffset(get<1>(*it1)-get<1>(*it2))+8;
                         if (bproExistence[rowDelta][columnDelta]){
