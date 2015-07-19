@@ -58,19 +58,18 @@ void BlobBproFeatures::getBlobs(const ALEScreen &screen){
     vector<vector<int> > screenPixels(screenHeight,vector<int>(screenWidth,0));
    
      vector<tuple<int,int> > neighbors;
-    for (int xDelta=-2;xDelta<0;xDelta++){
-        for (int yDelta=-2;yDelta<=2;yDelta++){
+    for (int xDelta=-3;xDelta<0;xDelta++){
+        for (int yDelta=-3;yDelta<=3;yDelta++){
             neighbors.push_back(make_tuple(xDelta,yDelta));
         }
     }
-    neighbors.push_back(make_tuple(0,-2)); neighbors.push_back(make_tuple(0,-1));
+    neighbors.push_back(make_tuple(0,-3)); neighbors.push_back(make_tuple(0,-2)); neighbors.push_back(make_tuple(0,-1));
     
     vector<Disjoint_Set_Element> disjoint_set;
     
     unordered_map<int,int> disjoint_set_indices;
     
     unordered_map<int,set<int> > blobIndices;
-    
     
     for (int x=0;x<screenHeight;x++){
         for (int y=0;y<screenWidth;y++){
@@ -80,7 +79,7 @@ void BlobBproFeatures::getBlobs(const ALEScreen &screen){
             for (auto it=neighbors.begin();it!=neighbors.end();it++){
                 int neighborX = get<0>(*it)+x;
                 int neighborY = get<1>(*it)+y;
-                if (neighborX>=0 && neighborY>=0 && neighborY<=screenWidth && screen.get(neighborX,neighborY)==color){
+                if (neighborX>=0 && neighborY>=0 && neighborY<screenWidth && screen.get(neighborX,neighborY)==color){
                     int posIndex = screenPixels[neighborX][neighborY];
                     route.insert(posIndex);
                     while (disjoint_set[posIndex].parent!=posIndex){
@@ -181,7 +180,11 @@ void BlobBproFeatures::getActiveFeaturesIndices(const ALEScreen &screen, const A
 	
     blobs.clear();
     getBlobs(screen);
+    /*for (auto it=blobs.begin();it!=blobs.end();it++){
+        cout<<it->first<<' '<<it->second.size()<<endl;
+    }*/
     addRelativeFeaturesIndices(screen,features);
+    //cout<<"one step"<<endl;
 }
 
 long long BlobBproFeatures::getNumberOfFeatures(){
