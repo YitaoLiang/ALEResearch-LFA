@@ -22,8 +22,10 @@
 #include <unordered_map>
 
 struct Disjoint_Set_Element{
-    tuple<int,int> pos;
+    int rowUp, rowDown, columnLeft, columnRight;
+    int size;
     int parent;
+    int color;
 };
 
 using namespace std;
@@ -36,9 +38,11 @@ class BlobBproFeatures : public Features::Features{
 		int numBasicFeatures;
         int numRelativeFeatures;
         int numColumns, numRows, numColors;
+        int colorMultiplier;
     
-        vector<Disjoint_Set_Element> representativePixels;
-        unordered_map<int,set<tuple<int,int> > > blobs;
+        vector<tuple<int,int> > neighbors;
+    
+        unordered_map<int,vector<tuple<int,int> > > blobs;
     
         vector<vector<bool> > bproExistence;
         vector<tuple<int,int> > changed;
@@ -46,8 +50,7 @@ class BlobBproFeatures : public Features::Features{
     void getBlobs(const ALEScreen &screen);
 		void addRelativeFeaturesIndices(const ALEScreen &screen,vector<long long>& features);
     void resetBproExistence(vector<vector<bool> >& bproExistence, vector<tuple<int,int> >& changed);
-    void addNewBlob(unordered_map<int,set<int> >& blobIndices,vector<vector<int> >& screenPixels, vector<Disjoint_Set_Element>& disjoint_set, unordered_map<int,int>& disjoint_set_indices,tuple<int,int>& pos,int color);
-    void mergeDisjointSet(set<int>& route, vector<Disjoint_Set_Element>& disjoint_set, int representativeIndex);
+    void updateRepresentatiePixel(int& i, int& j, int& root, int& other,vector<Disjoint_Set_Element>& disjoint_set);
     int getPowerTwoOffset(int rawDelta);
 	public:
 		/**
