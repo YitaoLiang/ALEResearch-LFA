@@ -16,6 +16,8 @@
 #include <vector>
 #include <unordered_map>
 
+using namespace std;
+
 class SarsaLearner : public RLLearner{
 	private:
 		float alpha, delta, lambda, traceThreshold;
