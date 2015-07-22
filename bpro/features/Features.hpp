@@ -78,4 +78,5 @@ class Features{
 		* Destructor, not necessary in this class.
 		*/
 		virtual ~Features();
+        virtual void clearCash() = 0 ;
 };
