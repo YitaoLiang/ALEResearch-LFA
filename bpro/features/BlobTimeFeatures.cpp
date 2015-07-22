@@ -54,7 +54,7 @@ BlobTimeFeatures::BlobTimeFeatures(Parameters *param){
     }
     fullNeighbors.push_back(make_tuple(0,-3)); fullNeighbors.push_back(make_tuple(0,-2)); fullNeighbors.push_back(make_tuple(0,-1));
     
-    extraNeighbors.push_back(make_tuple(-3,3)); extraNeighbors.push_back(make_tuple(-2,3));  extraNeighbors.push_back(make_tuple(-1,3)); extraNeighbors.push_back(make_tuple(0,-1));
+   extraNeighbors.push_back(make_tuple(0,-1)); extraNeighbors.push_back(make_tuple(-3,3)); extraNeighbors.push_back(make_tuple(-2,3));  extraNeighbors.push_back(make_tuple(-1,3));
     
     previousBlobs.clear();
 
@@ -116,8 +116,8 @@ void BlobTimeFeatures::getBlobs(const ALEScreen &screen){
                         }else{
                             if (disjoint_set[posIndex].size>disjoint_set[screenPixels[x][y]].size){
                                 disjoint_set[screenPixels[x][y]].parent = posIndex;
-                                screenPixels[x][y] = posIndex;
                                 blobIndices[color/colorMultiplier].erase(screenPixels[x][y]);
+                                screenPixels[x][y] = posIndex;
                                 updateRepresentatiePixel(x,y,posIndex,screenPixels[x][y],disjoint_set);
                             }else{
                                 disjoint_set[posIndex].parent = screenPixels[x][y];
@@ -233,10 +233,10 @@ void BlobTimeFeatures::getActiveFeaturesIndices(const ALEScreen &screen, const A
 	
     blobs.clear();
     getBlobs(screen);
-    /*for (auto it=blobs.begin();it!=blobs.end();++it){
+    for (auto it=blobs.begin();it!=blobs.end();++it){
         cout<<it->first<<' '<<it->second.size()<<endl;
     }
-    cout<<endl;*/
+    cout<<endl;
     getBasicFeatures(features,blobs);
     addRelativeFeaturesIndices(features);
     if (previousBlobs.size()>0){
