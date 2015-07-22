@@ -233,10 +233,10 @@ void BlobTimeFeatures::getActiveFeaturesIndices(const ALEScreen &screen, const A
 	
     blobs.clear();
     getBlobs(screen);
-    for (auto it=blobs.begin();it!=blobs.end();++it){
+    /*for (auto it=blobs.begin();it!=blobs.end();++it){
         cout<<it->first<<' '<<it->second.size()<<endl;
     }
-    cout<<endl;
+    cout<<endl;*/
     getBasicFeatures(features,blobs);
     addRelativeFeaturesIndices(features);
     if (previousBlobs.size()>0){
