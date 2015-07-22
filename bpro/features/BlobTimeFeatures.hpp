@@ -39,7 +39,8 @@ class BlobTimeFeatures : public Features::Features{
         int numColumns, numRows, numColors;
         int colorMultiplier;
     
-        vector<tuple<int,int> > neighbors;
+        vector<tuple<int,int> > fullNeighbors;
+        vector<tuple<int,int> > extraNeighbors;
     
         unordered_map<int,vector<tuple<int,int> > > blobs;
         unordered_map<int,vector<tuple<int,int> > > previousBlobs;

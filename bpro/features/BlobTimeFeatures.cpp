@@ -49,10 +49,12 @@ BlobTimeFeatures::BlobTimeFeatures(Parameters *param){
     
     for (int xDelta=-3;xDelta<0;xDelta++){
         for (int yDelta=-3;yDelta<=3;yDelta++){
-            neighbors.push_back(make_tuple(xDelta,yDelta));
+            fullNeighbors.push_back(make_tuple(xDelta,yDelta));
         }
     }
-    neighbors.push_back(make_tuple(0,-3)); neighbors.push_back(make_tuple(0,-2)); neighbors.push_back(make_tuple(0,-1));
+    fullNeighbors.push_back(make_tuple(0,-3)); fullNeighbors.push_back(make_tuple(0,-2)); fullNeighbors.push_back(make_tuple(0,-1));
+    
+    extraNeighbors.push_back(make_tuple(-3,3)); extraNeighbors.push_back(make_tuple(-2,3));  extraNeighbors.push_back(make_tuple(-1,3)); extraNeighbors.push_back(make_tuple(0,-1));
     
     previousBlobs.clear();
 
@@ -75,6 +77,12 @@ void BlobTimeFeatures::getBlobs(const ALEScreen &screen){
         for (int y=0;y<screenWidth;y++){
             set<tuple<int,int> > possibleBlobs;
             int color = screen.get(x,y);
+            vector<tuple<int,int> > neighbors;
+            if (y>0 && color == screen.get(x,y-1)){
+                neighbors = extraNeighbors;
+            }else{
+                neighbors = fullNeighbors;
+            }
             for (auto it=neighbors.begin();it!=neighbors.end();++it){
                 int neighborX = get<0>(*it)+x;
                 int neighborY = get<1>(*it)+y;
