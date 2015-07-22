@@ -23,7 +23,7 @@
 #endif
 #ifndef BASIC_H
 #define BASIC_H
-#include "features/BlobBproFeatures.hpp"
+#include "features/BlobTimeFeatures.hpp"
 #endif
 
 //#include <random>
@@ -48,7 +48,7 @@ int main(int argc, char** argv){
 	srand(param.getSeed());
 	
 	//Using Basic features:
-	BlobBproFeatures features(&param);
+	BlobTimeFeatures features(&param);
 	//Reporting parameters read:
 	printBasicInfo(param);
 	

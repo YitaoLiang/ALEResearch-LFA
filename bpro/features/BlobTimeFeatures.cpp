@@ -21,7 +21,7 @@
 using namespace std;
 
 
-BlobTimeFeatures::BlobBproFeatures(Parameters *param){
+BlobTimeFeatures::BlobTimeFeatures(Parameters *param){
     this->param = param;
     numColumns  = param->getNumColumns();
 	numRows     = param->getNumRows();
@@ -36,6 +36,7 @@ BlobTimeFeatures::BlobBproFeatures(Parameters *param){
     numBasicFeaturesPart1 = numColors*(210/15)*(160/10); numBasicFeaturesPart2 =numColors*(210/3)*(160/2); numBasicFeaturesPart3 = numColors*(210/7)*(160/4);
     numBasicFeatures = numColors*(210/15)*(160/10) + numColors*(210/3)*(160/2) + numColors*(210/7)*(160/4);
     numRelativeFeatures = (2 * 8 + 1) * (2 * 8 + 1)* (1+this->param->getNumColors()) * this->param->getNumColors()/2;
+    numTimeDimensionalOffsets = this->param->getNumColors() * this->param->getNumColors() *(2 * this->param->getNumColumns() - 1) * (2 * this->param->getNumRows() - 1) ;
     
     changed.clear();
     bproExistence.resize(2*8+1);
@@ -52,6 +53,8 @@ BlobTimeFeatures::BlobBproFeatures(Parameters *param){
         }
     }
     neighbors.push_back(make_tuple(0,-3)); neighbors.push_back(make_tuple(0,-2)); neighbors.push_back(make_tuple(0,-1));
+    
+    previousBlobs.clear();
 
 }
 
@@ -151,7 +154,7 @@ void BlobTimeFeatures::getBlobs(const ALEScreen &screen){
     }
 }
 
-void BlobTimeFeatures::addRelativeFeaturesIndices(const ALEScreen &screen,vector<long long>& features){
+void BlobTimeFeatures::addRelativeFeaturesIndices(vector<long long>& features){
     int numRowOffsets = 2*8 + 1;
     int numColumnOffsets = 2*8+ 1;
     for (int c1=0;c1<numColors;c1++){
@@ -179,7 +182,7 @@ void BlobTimeFeatures::addRelativeFeaturesIndices(const ALEScreen &screen,vector
                     }
                 }
             }
-            resetBproExistence(bproExistence,changed);
+            resetBproExistence();
         }
         
         for (int c2=c1+1;c2<numColors;c2++){
@@ -197,7 +200,7 @@ void BlobTimeFeatures::addRelativeFeaturesIndices(const ALEScreen &screen,vector
                     }
                 }
             }
-            resetBproExistence(bproExistence,changed);
+            resetBproExistence();
         }
     }
 }
@@ -227,22 +230,48 @@ void BlobTimeFeatures::getActiveFeaturesIndices(const ALEScreen &screen, const A
     }
     cout<<endl;*/
     getBasicFeatures(features,blobs);
-    addRelativeFeaturesIndices(screen,features);
-    
+    addRelativeFeaturesIndices(features);
+    if (previousBlobs.size()>0){
+        addTimeDimensionalOffsets(features);
+    }
+    previousBlobs = blobs;
+}
+
+void BlobTimeFeatures::addTimeDimensionalOffsets(vector<long long>& features){
+    int numRowOffsets = 2*8 + 1;
+    int numColumnOffsets = 2*8+ 1;
+    for (int c1=0;c1<numColors;++c1){
+        for (int c2=0;c2<numColors;++c2){
+            if (previousBlobs[c1].size()>0 && blobs[c2].size()>0){
+                for (auto it1=previousBlobs[c1].begin();it1 !=previousBlobs[c1].end();++it1){
+                    for (auto it2=blobs[c2].begin();it2 != blobs[c2].end();++it2){
+                        int rowDelta = getPowerTwoOffset(get<0>(*it1)-get<0>(*it2))+8;
+                        int columnDelta = getPowerTwoOffset(get<1>(*it1)-get<1>(*it2))+8;
+                        if (bproExistence[rowDelta][columnDelta]){
+                            tuple<int,int> pos(rowDelta,columnDelta);
+                            changed.push_back(pos);
+                            bproExistence[rowDelta][columnDelta]=false;
+                            features.push_back(numBasicFeatures+numRelativeFeatures+c1*numColors*numRowOffsets*numColumnOffsets+c2*numRowOffsets*numColumnOffsets+rowDelta*numColumnOffsets+columnDelta);
+                        }
+                    }
+                }
+                resetBproExistence();
+            }
+        }
+    }
+
 }
 
 long long BlobTimeFeatures::getNumberOfFeatures(){
     return numBasicFeatures+numRelativeFeatures + numTimeDimensionalOffsets+1;
 }
 
-void BlobTimeFeatures::resetBproExistence(vector<vector<bool> >& bproExistence, vector<tuple<int,int> >& changed){
+void BlobTimeFeatures::resetBproExistence(){
     for (vector<tuple<int,int> >::iterator it = changed.begin();it!=changed.end();it++){
         bproExistence[get<0>(*it)][get<1>(*it)]=true;
     }
     changed.clear();
 }
-
-
 
 int BlobTimeFeatures::getPowerTwoOffset(int rawDelta){
     int multiplier = 1;
@@ -259,4 +288,8 @@ void BlobTimeFeatures::updateRepresentatiePixel(int& x, int& y, int& root, int& 
     disjoint_set[root].columnLeft = min(disjoint_set[root].columnLeft,disjoint_set[other].columnLeft);
     disjoint_set[root].columnRight = max(disjoint_set[root].columnRight,disjoint_set[other].columnRight);
     disjoint_set[root].size += disjoint_set[other].size;
+}
+
+void BlobTimeFeatures::clearCash(){
+    previousBlobs.clear();
 }
