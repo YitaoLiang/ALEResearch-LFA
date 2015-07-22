@@ -8,13 +8,9 @@
 ** Author: Marlos C. Machado
 ***************************************************************************************/
 
-#ifndef Blob_BPRO_FEATURES_H
-#define Blob_BPRO_FEATURES_H
-#include "BlobBproFeatures.hpp"
-#endif
-#ifndef BASIC_FEATURES_H
-#define BASIC_FEATURES_H
-#include "BasicFeatures.hpp"
+#ifndef Blob_TIME_FEATURES_H
+#define Blob_TIME_FEATURES_H
+#include "BlobTimeFeatures.hpp"
 #endif
 
 #include <set>
@@ -25,7 +21,7 @@
 using namespace std;
 
 
-BlobBproFeatures::BlobBproFeatures(Parameters *param){
+BlobTimeFeatures::BlobBproFeatures(Parameters *param){
     this->param = param;
     numColumns  = param->getNumColumns();
 	numRows     = param->getNumRows();
@@ -37,7 +33,8 @@ BlobBproFeatures::BlobBproFeatures(Parameters *param){
     }
 
 	//To get the total number of features:
-  
+    numBasicFeaturesPart1 = numColors*(210/15)*(160/10); numBasicFeaturesPart2 =numColors*(210/3)*(160/2); numBasicFeaturesPart3 = numColors*(210/7)*(160/4);
+    numBasicFeatures = numColors*(210/15)*(160/10) + numColors*(210/3)*(160/2) + numColors*(210/7)*(160/4);
     numRelativeFeatures = (2 * 8 + 1) * (2 * 8 + 1)* (1+this->param->getNumColors()) * this->param->getNumColors()/2;
     
     changed.clear();
@@ -58,9 +55,9 @@ BlobBproFeatures::BlobBproFeatures(Parameters *param){
 
 }
 
-BlobBproFeatures::~BlobBproFeatures(){}
+BlobTimeFeatures::~BlobTimeFeatures(){}
 
-void BlobBproFeatures::getBlobs(const ALEScreen &screen){
+void BlobTimeFeatures::getBlobs(const ALEScreen &screen){
     int screenWidth = screen.width();
     int screenHeight = screen.height();
     
@@ -68,6 +65,7 @@ void BlobBproFeatures::getBlobs(const ALEScreen &screen){
     vector<vector<int> > screenPixels(screenHeight,vector<int>(screenWidth,-1));
     
     vector<Disjoint_Set_Element> disjoint_set;
+    vector<unordered_set<int> > blobIndices(128,unordered_set<int>());
     vector<int> route;
 
     for (int x=0;x<screenHeight;x++){
@@ -108,9 +106,11 @@ void BlobBproFeatures::getBlobs(const ALEScreen &screen){
                             if (disjoint_set[posIndex].size>disjoint_set[screenPixels[x][y]].size){
                                 disjoint_set[screenPixels[x][y]].parent = posIndex;
                                 screenPixels[x][y] = posIndex;
+                                blobIndices[color/colorMultiplier].erase(screenPixels[x][y]);
                                 updateRepresentatiePixel(x,y,posIndex,screenPixels[x][y],disjoint_set);
                             }else{
                                 disjoint_set[posIndex].parent = screenPixels[x][y];
+                                blobIndices[color/colorMultiplier].erase(posIndex);
                                 updateRepresentatiePixel(x,y,screenPixels[x][y],posIndex,disjoint_set);
                             }
                         }
@@ -126,22 +126,32 @@ void BlobBproFeatures::getBlobs(const ALEScreen &screen){
                 element.size = 1;
                 element.parent = disjoint_set.size();
                 screenPixels[x][y] = disjoint_set.size();
-                element.color = color / colorMultiplier;
+                //element.color = color / colorMultiplier;
+                blobIndices[color/colorMultiplier].insert(disjoint_set.size());
                 disjoint_set.push_back(element);
             }
             
         }
     }
     
-    
+    /*
     for (int index = 0;index<disjoint_set.size();index++){
         if (disjoint_set[index].parent==index){
             blobs[disjoint_set[index].color].push_back(make_tuple((disjoint_set[index].rowUp+disjoint_set[index].rowDown)/2,(disjoint_set[index].columnLeft+disjoint_set[index].columnRight)/2));
         }
+    }*/
+    
+    //get all the blobs
+    for (int color = 0;color<numColors;color++){
+        for (auto index=blobIndices[color].begin();index!=blobIndices[color].end();++index){
+            int x = (disjoint_set[*index].rowUp+disjoint_set[*index].rowDown)/2;
+            int y = (disjoint_set[*index].columnLeft+disjoint_set[*index].columnRight)/2;
+            blobs[color].push_back(make_tuple(x,y));
+        }
     }
 }
 
-void BlobBproFeatures::addRelativeFeaturesIndices(const ALEScreen &screen,vector<long long>& features){
+void BlobTimeFeatures::addRelativeFeaturesIndices(const ALEScreen &screen,vector<long long>& features){
     int numRowOffsets = 2*8 + 1;
     int numColumnOffsets = 2*8+ 1;
     for (int c1=0;c1<numColors;c1++){
@@ -192,20 +202,40 @@ void BlobBproFeatures::addRelativeFeaturesIndices(const ALEScreen &screen,vector
     }
 }
 
-void BlobBproFeatures::getActiveFeaturesIndices(const ALEScreen &screen, const ALERAM &ram, vector<long long>& features){
+void BlobTimeFeatures::getBasicFeatures(vector<long long>& features,  unordered_map<int,vector<tuple<int,int> > >& blobs){
+    for (auto it=blobs.begin();it!=blobs.end();++it){
+        int color = it->first;
+        long long base1 = color*14*16;
+        long long base2 = numBasicFeaturesPart1+color*70*80;
+        long long base3 = numBasicFeaturesPart1+numBasicFeaturesPart2+color*30*40;
+        for (auto itt=it->second.begin();itt!=it->second.end();++itt){
+            int x = get<0>(*itt);
+            int y = get<1>(*itt);
+            features.push_back(base1+(x/15)*16+(y/10));
+            features.push_back(base2+(x/3)*80+(y/2));
+            features.push_back(base3+(x/7)*40+(y/4));
+        }
+    }
+}
+
+void BlobTimeFeatures::getActiveFeaturesIndices(const ALEScreen &screen, const ALERAM &ram, vector<long long>& features){
 	
     blobs.clear();
     getBlobs(screen);
+    /*for (auto it=blobs.begin();it!=blobs.end();++it){
+        cout<<it->first<<' '<<it->second.size()<<endl;
+    }
+    cout<<endl;*/
+    getBasicFeatures(features,blobs);
     addRelativeFeaturesIndices(screen,features);
-    //cout<<"one step"<<endl;
     
 }
 
-long long BlobBproFeatures::getNumberOfFeatures(){
-    return numRelativeFeatures + 1;
+long long BlobTimeFeatures::getNumberOfFeatures(){
+    return numBasicFeatures+numRelativeFeatures + numTimeDimensionalOffsets+1;
 }
 
-void BlobBproFeatures::resetBproExistence(vector<vector<bool> >& bproExistence, vector<tuple<int,int> >& changed){
+void BlobTimeFeatures::resetBproExistence(vector<vector<bool> >& bproExistence, vector<tuple<int,int> >& changed){
     for (vector<tuple<int,int> >::iterator it = changed.begin();it!=changed.end();it++){
         bproExistence[get<0>(*it)][get<1>(*it)]=true;
     }
@@ -214,7 +244,7 @@ void BlobBproFeatures::resetBproExistence(vector<vector<bool> >& bproExistence, 
 
 
 
-int BlobBproFeatures::getPowerTwoOffset(int rawDelta){
+int BlobTimeFeatures::getPowerTwoOffset(int rawDelta){
     int multiplier = 1;
     if (rawDelta<0){
         multiplier = -1;
@@ -223,7 +253,7 @@ int BlobBproFeatures::getPowerTwoOffset(int rawDelta){
     return ceil(log2(rawDelta))*multiplier;
 }
 
-void BlobBproFeatures::updateRepresentatiePixel(int& x, int& y, int& root, int& other,vector<Disjoint_Set_Element>& disjoint_set){
+void BlobTimeFeatures::updateRepresentatiePixel(int& x, int& y, int& root, int& other,vector<Disjoint_Set_Element>& disjoint_set){
     disjoint_set[root].rowUp = min(disjoint_set[root].rowUp,disjoint_set[other].rowUp);
     disjoint_set[root].rowDown = x;
     disjoint_set[root].columnLeft = min(disjoint_set[root].columnLeft,disjoint_set[other].columnLeft);

@@ -1,11 +1,9 @@
 /****************************************************************************************
-** Implementation of Basic Features, described in details in the paper below. 
-**       "The Arcade Learning Environment: An Evaluation Platform for General Agents.
-**        Marc G. Bellemare, Yavar Naddaf, Joel Veness, and Michael Bowling.
-**        Journal of Artificial Intelligence Research, 47:253–279, 2013."
+** Implementation of a variation of BASS Features, which has features to encode the 
+**  relative position between tiles.
 **
-** The idea is to divide the screen in tiles and to answer, for each tile, if one of the
-** n colors defined are present in that tile.
+** REMARKS: - This implementation is basically Erik Talvitie's implementation, presented
+**            in the AAAI'15 LGCVG Workshop.
 **
 ** Author: Marlos C. Machado
 ***************************************************************************************/
@@ -19,27 +17,54 @@
 #include "Background.hpp"
 #endif
 
-class BasicFeatures : public Features::Features{
+#include <tuple>
+#include <set>
+#include <unordered_map>
+
+struct Disjoint_Set_Element{
+    int rowUp, rowDown, columnLeft, columnRight;
+    int size;
+    int parent;
+};
+
+using namespace std;
+
+class BlobTimeFeatures : public Features::Features{
 	private:
 		Parameters *param;
 		Background *background;
-
-		int numberOfFeatures;
+		
+		long long numBasicFeatures, numRelativeFeatures, numTimeDimensionalOffsets;
+        long long numBasicFeaturesPart1, numBasicFeatures2,numBasicFeatures3;
+        int numColumns, numRows, numColors;
+        int colorMultiplier;
+    
+        vector<tuple<int,int> > neighbors;
+    
+        unordered_map<int,vector<tuple<int,int> > > blobs;
+    
+        vector<vector<bool> > bproExistence;
+        vector<tuple<int,int> > changed;
+    
+    void getBlobs(const ALEScreen &screen);
+    void getBasicFeatures(vector<long long>& features, unordered_map<int,vector<tuple<int,int> > >& blobs);
+    void addRelativeFeaturesIndices(const ALEScreen &screen,vector<long long>& features);
+    void resetBproExistence(vector<vector<bool> >& bproExistence, vector<tuple<int,int> >& changed);
+    void updateRepresentatiePixel(int& i, int& j, int& root, int& other,vector<Disjoint_Set_Element>& disjoint_set);
+    int getPowerTwoOffset(int rawDelta);
 	public:
 		/**
 		* Destructor, used to delete the background, which is allocated dynamically.
 		*/
-		~BasicFeatures();
+		~BlobTimeFeatures();
 		/**
- 		* Constructor. Since every operation in this class has to be done knowing the number of
- 		* columns, rows and colors to generate the feature vector, this information is given in
- 		* param, as any other relevant information such as background.
+ 		* TODO: COMMENT
  		* 
  		* @param Parameters *param, which gives access to the number of columns, number of rows,
  		*                   number of colors and the background information
  		* @return nothing, it is a constructor.
  		*/
-		BasicFeatures(Parameters *param);
+		BlobTimeFeatures(Parameters *param);
 		/**
  		* This method is the instantiation of the virtual method in the class Features (also check
  		* its documentation). It iterates over all tiles defined by the columns and rows and checks
