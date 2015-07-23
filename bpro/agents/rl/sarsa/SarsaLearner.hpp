@@ -20,6 +20,7 @@ using namespace std;
 class SarsaLearner : public RLLearner{
 	private:
 		float alpha, delta, lambda, traceThreshold;
+        float learningRate;
 		int currentAction, nextAction;
         long long numFeatures;
 		int toSaveWeightsAfterLearning, saveWeightsEveryXFrames, toSaveCheckPoint;

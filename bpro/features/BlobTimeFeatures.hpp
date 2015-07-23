@@ -25,6 +25,7 @@ struct Disjoint_Set_Element{
     int rowUp, rowDown, columnLeft, columnRight;
     int size;
     int parent;
+    //int color;
 };
 
 using namespace std;
@@ -57,12 +58,14 @@ class BlobTimeFeatures : public Features::Features{
     
         vector<long long> baseBpro, baseTime;
     
+        int neighborSize;
+    
     void getBlobs(const ALEScreen &screen);
     void getBasicFeatures(vector<long long>& features, unordered_map<int,vector<tuple<int,int> > >& blobs);
     void addRelativeFeaturesIndices(vector<long long>& features);
     void addTimeDimensionalOffsets(vector<long long>& features);
     void resetBproExistence();
-    void updateRepresentatiePixel(int& i, int& j, int& root, int& other,vector<Disjoint_Set_Element>& disjoint_set);
+    void updateRepresentatiePixel(int& x, int& y, Disjoint_Set_Element* root, Disjoint_Set_Element* other);
     int getPowerTwoOffset(int rawDelta);
 	public:
 		/**

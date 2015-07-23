@@ -22,7 +22,7 @@ SarsaLearner::SarsaLearner(ALEInterface& ale, Features *features, Parameters *pa
     totalNumberFrames = 0.0;
     maxFeatVectorNorm = 1;
     saveThreshold =0;
-    
+    learningRate = 1.0;
     delta = 0.0;
 	alpha = param->getAlpha();
 	lambda = param->getLambda();
@@ -39,7 +39,9 @@ SarsaLearner::SarsaLearner(ALEInterface& ale, Features *features, Parameters *pa
 		Qnext.push_back(0);
 		//Initialize e:
 		e.push_back(unordered_map<long long, float>());
+        e.back().reserve(10000000);
 		w.push_back(unordered_map<long long,float>());
+        w.back().reserve(10000000);
 	}
     
     episodePassed = 0;
@@ -68,13 +70,11 @@ SarsaLearner::SarsaLearner(ALEInterface& ale, Features *features, Parameters *pa
 SarsaLearner::~SarsaLearner(){}
 
 void SarsaLearner::updateQValues(vector<long long> &Features, vector<float> &QValues){
-	for(int a = 0; a < numActions; a++){
+    unsigned long long featureSize = Features.size();
+	for(int a = 0; a < numActions; ++a){
 		float sumW = 0;
-		for(unsigned long long i = 0; i < Features.size(); i++){
-            auto got = w[a].find(Features[i]);
-            if (got!=w[a].end()){
-                sumW += w[a][Features[i]];
-            }
+		for(unsigned long long i = 0; i < featureSize; ++i){
+            sumW += w[a][Features[i]];
 		}
 		QValues[a] = sumW;
 	}
@@ -118,12 +118,7 @@ void SarsaLearner::updateAcumTrace(int action, vector<long long> &Features){
 		long long idx = Features[i];
 		//If the trace is zero it is not in the vector
 		//of non-zeros, thus it needs to be added
-        auto got = e[action].find(idx);
-        if (got==e[action].end()){
-            e[action][idx]=1;
-        }else{
-            got->second+=1;
-        }
+        e[action][idx]+=1;
 	}
 }
 
@@ -252,6 +247,7 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
 			//the time, Marc used such approach in his JAIR paper		
 			if (F.size() > maxFeatVectorNorm){
 				maxFeatVectorNorm = F.size();
+                learningRate = alpha/maxFeatVectorNorm;
 			}
 
 			delta = reward[0] + gamma * Qnext[nextAction] - Q[currentAction];
@@ -261,15 +257,10 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
 			for(unsigned int a = 0; a < e.size(); a++){
 				for(auto it=e[a].begin();it!=e[a].end();it++){
 					long long idx = it->first;
-                    float changeAmount = (alpha/maxFeatVectorNorm)*delta*it->second;
-                    if (changeAmount!=0){
-                        auto got = w[a].find(idx);
-                        if (got==w[a].end()){
-                            w[a][idx]=changeAmount;
-                        }else{
-                            got->second+=changeAmount;
-                        }
-                    }
+                    float changeAmount = learningRate*delta*it->second;
+                    w[a][idx]+=changeAmount;
+                    
+                    
 				}
 			}
 			F = Fnext;

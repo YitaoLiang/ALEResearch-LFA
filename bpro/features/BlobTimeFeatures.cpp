@@ -47,27 +47,27 @@ BlobTimeFeatures::BlobTimeFeatures(Parameters *param){
     
     changedPart1.clear();
     bproExistencePart1.resize(get<0>(numOffsets[0]));
-    for (int i=0;i<get<0>(numOffsets[0]);i++){
+    for (int i=0;i<get<0>(numOffsets[0]);++i){
         bproExistencePart1[i].resize(get<1>(numOffsets[0]));
-        for (int j=0;j<get<1>(numOffsets[1]);j++){
+        for (int j=0;j<get<1>(numOffsets[1]);++j){
             bproExistencePart1[i][j]=true;
         }
     }
     
     changedPart2.clear();
     bproExistencePart2.resize(get<0>(numOffsets[1]));
-    for (int i=0;i<get<0>(numOffsets[1]);i++){
+    for (int i=0;i<get<0>(numOffsets[1]);++i){
         bproExistencePart2[i].resize(get<1>(numOffsets[1]));
-        for (int j=0;j<get<1>(numOffsets[1]);j++){
+        for (int j=0;j<get<1>(numOffsets[1]);++j){
             bproExistencePart2[i][j]=true;
         }
     }
     
     changedPart3.clear();
     bproExistencePart3.resize(get<0>(numOffsets[2]));
-    for (int i=0;i<get<0>(numOffsets[2]);i++){
+    for (int i=0;i<get<0>(numOffsets[2]);++i){
         bproExistencePart3[i].resize(get<1>(numOffsets[2]));
-        for (int j=0;j<get<1>(numOffsets[2]);j++){
+        for (int j=0;j<get<1>(numOffsets[2]);++j){
             bproExistencePart3[i][j]=true;
         }
     }
@@ -75,17 +75,23 @@ BlobTimeFeatures::BlobTimeFeatures(Parameters *param){
     changed.push_back(changedPart1); changed.push_back(changedPart2); changed.push_back(changedPart3);
     bproExistence.push_back(bproExistencePart1);  bproExistence.push_back(bproExistencePart2); bproExistence.push_back(bproExistencePart3);
     
+    neighborSize = 3;
     fullNeighbors = new vector<tuple<int,int> >();
-    for (int xDelta=-3;xDelta<0;xDelta++){
-        for (int yDelta=-3;yDelta<=3;yDelta++){
+    for (int xDelta=-neighborSize;xDelta<0;++xDelta){
+        for (int yDelta=-neighborSize;yDelta<=neighborSize;++yDelta){
             fullNeighbors->push_back(make_tuple(xDelta,yDelta));
         }
     }
-    fullNeighbors->push_back(make_tuple(0,-3)); fullNeighbors->push_back(make_tuple(0,-2)); fullNeighbors->push_back(make_tuple(0,-1));
+    
+    for (int yDelta=-neighborSize;yDelta<0;++yDelta){
+        fullNeighbors->push_back(make_tuple(0,yDelta));
+    }
     
     extraNeighbors = new vector<tuple<int,int> >();
-    extraNeighbors->push_back(make_tuple(0,-1)); extraNeighbors->push_back(make_tuple(-3,3)); extraNeighbors->push_back(make_tuple(-2,3));  extraNeighbors->push_back(make_tuple(-1,3));
-    
+    extraNeighbors->push_back(make_tuple(0,-1));
+    for (int xDelta=-neighborSize;xDelta<0;++xDelta){
+        extraNeighbors->push_back(make_tuple(xDelta,neighborSize));
+    }
     previousBlobs.clear();
     
    
@@ -102,63 +108,70 @@ void BlobTimeFeatures::getBlobs(const ALEScreen &screen){
     int screenHeight = screen.height();
     
     
-    vector<vector<int> > screenPixels(screenHeight,vector<int>(screenWidth,-1));
+    vector<int> screenPixels((screenHeight+neighborSize)*(screenWidth+2*neighborSize),-1);
     
     vector<Disjoint_Set_Element> disjoint_set;
-    vector<unordered_set<int> > blobIndices(128,unordered_set<int>());
+    vector<unordered_set<int> > blobIndices(numColors,unordered_set<int>());
     vector<int> route;
 
      vector<tuple<int,int> >* neighbors;
     
+    int width = screenWidth+2*neighborSize;
+    
     for (int x=0;x<screenHeight;x++){
         for (int y=0;y<screenWidth;y++){
-            set<tuple<int,int> > possibleBlobs;
             int color = screen.get(x,y);
             if (y>0 && color == screen.get(x,y-1)){
                 neighbors = extraNeighbors;
             }else{
                 neighbors = fullNeighbors;
             }
+            int currentIndex = (x+neighborSize)*width + (y+neighborSize);
+            
             for (auto it=neighbors->begin();it!=neighbors->end();++it){
                 int neighborX = get<0>(*it)+x;
                 int neighborY = get<1>(*it)+y;
-                if (neighborX>=0 && neighborY>=0 && neighborY<screenWidth && screen.get(neighborX,neighborY)==color){
-                    int posIndex = screenPixels[neighborX][neighborY];
-                    
-                    route.clear();
+                
+                int neighborRoot = screenPixels[(neighborX+neighborSize)*width+neighborY+neighborSize];
+                if (neighborRoot!=-1 && screen.get(neighborX,neighborY)==color){
                     //get the true root
-                    while (disjoint_set[posIndex].parent!=posIndex){
-                        route.push_back(posIndex);
-                        posIndex = disjoint_set[posIndex].parent;
+                    route.clear();
+                    while (disjoint_set[neighborRoot].parent!=neighborRoot){
+                        route.push_back(neighborRoot);
+                        neighborRoot = disjoint_set[neighborRoot].parent;
                     }
                     
                     //maintain the disjoint_set
                     for (auto itt=route.begin();itt!=route.end();++itt){
-                        disjoint_set[*itt].parent = posIndex;
+                        disjoint_set[*itt].parent = neighborRoot;
                     }
                     
-                    if (posIndex!=screenPixels[x][y]){
+                    int currentRoot = screenPixels[currentIndex];
+                    
+                    if (neighborRoot!=currentRoot){
+                        auto blobNeighbor  = &disjoint_set[neighborRoot];
                         //case 1: current pixel does not belong to any blob
-                        if (screenPixels[x][y]==-1){
-                            screenPixels[x][y]=posIndex;
-                            disjoint_set[posIndex].rowDown = x;
-                            if (y < disjoint_set[posIndex].columnLeft){
-                                disjoint_set[posIndex].columnLeft = y;
-                            }else if (y > disjoint_set[posIndex].columnRight){
-                                disjoint_set[posIndex].columnRight = y;
+                        if (currentRoot==-1){
+                            screenPixels[currentIndex]=neighborRoot;
+                            blobNeighbor->rowDown = x;
+                            if (y < blobNeighbor->columnLeft){
+                                blobNeighbor->columnLeft = y;
+                            }else if (y > blobNeighbor->columnRight){
+                                blobNeighbor->columnRight = y;
                             }
-                            disjoint_set[posIndex].size+=1;
+                            blobNeighbor->size+=1;
                         //case 2: current pixel belongs to two blobs
                         }else{
-                            if (disjoint_set[posIndex].size>disjoint_set[screenPixels[x][y]].size){
-                                disjoint_set[screenPixels[x][y]].parent = posIndex;
-                                blobIndices[color/colorMultiplier].erase(screenPixels[x][y]);
-                                updateRepresentatiePixel(x,y,posIndex,screenPixels[x][y],disjoint_set);
-                                screenPixels[x][y] = posIndex;
+                            auto currentBlob = &disjoint_set[currentRoot];
+                            if (blobNeighbor->size>currentBlob->size){
+                                currentBlob->parent = neighborRoot;
+                                blobIndices[color/colorMultiplier].erase(currentRoot);
+                                updateRepresentatiePixel(x,y,blobNeighbor,currentBlob);
+                                screenPixels[currentIndex] = neighborRoot;
                             }else{
-                                disjoint_set[posIndex].parent = screenPixels[x][y];
-                                blobIndices[color/colorMultiplier].erase(posIndex);
-                                updateRepresentatiePixel(x,y,screenPixels[x][y],posIndex,disjoint_set);
+                                blobNeighbor->parent = currentRoot;
+                                blobIndices[color/colorMultiplier].erase(neighborRoot);
+                                updateRepresentatiePixel(x,y,currentBlob,blobNeighbor);
                             }
                         }
                     }
@@ -166,13 +179,13 @@ void BlobTimeFeatures::getBlobs(const ALEScreen &screen){
             }
             
             //current pixel is the first pixel for a new blob
-            if (screenPixels[x][y]==-1){
+            if (screenPixels[currentIndex]==-1){
                 Disjoint_Set_Element element;
                 element.columnLeft = y; element.columnRight = y;
                 element.rowUp = x; element.rowDown = x;
                 element.size = 1;
                 element.parent = disjoint_set.size();
-                screenPixels[x][y] = disjoint_set.size();
+                screenPixels[currentIndex] = disjoint_set.size();
                 //element.color = color / colorMultiplier;
                 blobIndices[color/colorMultiplier].insert(disjoint_set.size());
                 disjoint_set.push_back(element);
@@ -189,7 +202,7 @@ void BlobTimeFeatures::getBlobs(const ALEScreen &screen){
     }*/
     
     //get all the blobs
-    for (int color = 0;color<numColors;color++){
+    for (int color = 0;color<numColors;++color){
         for (auto index=blobIndices[color].begin();index!=blobIndices[color].end();++index){
             int x = (disjoint_set[*index].rowUp+disjoint_set[*index].rowDown)/2;
             int y = (disjoint_set[*index].columnLeft+disjoint_set[*index].columnRight)/2;
@@ -314,8 +327,8 @@ long long BlobTimeFeatures::getNumberOfFeatures(){
 }
 
 void BlobTimeFeatures::resetBproExistence(){
-    for (int index = 0; index<3;index++){
-        for (vector<tuple<int,int> >::iterator it = changed[index].begin();it!=changed[index].end();it++){
+    for (int index = 0; index<3;++index){
+        for (vector<tuple<int,int> >::iterator it = changed[index].begin();it!=changed[index].end();++it){
             bproExistence[index][get<0>(*it)][get<1>(*it)]=true;
         }
         changed[index].clear();
@@ -331,13 +344,12 @@ int BlobTimeFeatures::getPowerTwoOffset(int rawDelta){
     return ceil(log2(rawDelta))*multiplier;
 }
 
-
-void BlobTimeFeatures::updateRepresentatiePixel(int& x, int& y, int& root, int& other,vector<Disjoint_Set_Element>& disjoint_set){
-    disjoint_set[root].rowUp = min(disjoint_set[root].rowUp,disjoint_set[other].rowUp);
-    disjoint_set[root].rowDown = x;
-    disjoint_set[root].columnLeft = min(disjoint_set[root].columnLeft,disjoint_set[other].columnLeft);
-    disjoint_set[root].columnRight = max(disjoint_set[root].columnRight,disjoint_set[other].columnRight);
-    disjoint_set[root].size += disjoint_set[other].size;
+void BlobTimeFeatures::updateRepresentatiePixel(int& x, int& y, Disjoint_Set_Element* root, Disjoint_Set_Element* other){
+    root->rowUp = min(root->rowUp,other->rowUp);
+    root->rowDown = x;
+    root->columnLeft = min(root->columnLeft,other->columnLeft);
+    root->columnRight = max(root->columnRight,other->columnRight);
+    root->size += other->size;
 }
 
 void BlobTimeFeatures::clearCash(){
