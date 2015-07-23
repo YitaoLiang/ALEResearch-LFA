@@ -36,17 +36,26 @@ class BlobTimeFeatures : public Features::Features{
 		
 		long long numBasicFeatures, numRelativeFeatures, numTimeDimensionalOffsets;
         long long numBasicFeaturesPart1, numBasicFeaturesPart2,numBasicFeaturesPart3;
-        int numColumns, numRows, numColors;
+        int numColors;
         int colorMultiplier;
     
-        vector<tuple<int,int> > fullNeighbors;
-        vector<tuple<int,int> > extraNeighbors;
+        vector<tuple<int,int> >* fullNeighbors;
+        vector<tuple<int,int> >* extraNeighbors;
     
         unordered_map<int,vector<tuple<int,int> > > blobs;
         unordered_map<int,vector<tuple<int,int> > > previousBlobs;
     
-        vector<vector<bool> > bproExistence;
-        vector<tuple<int,int> > changed;
+        vector<vector<bool> > bproExistencePart1, bproExistencePart2, bproExistencePart3;
+        vector<tuple<int,int> > changedPart1, changedPart2, changedPart3;
+    
+        vector<tuple<int,int> > resolutions;
+        vector<tuple<int,int> > numBlocks;
+        vector<tuple<int,int> > numOffsets;
+    
+        vector<vector<vector<bool> > > bproExistence;
+        vector<vector<tuple<int,int> > > changed;
+    
+        vector<long long> baseBpro, baseTime;
     
     void getBlobs(const ALEScreen &screen);
     void getBasicFeatures(vector<long long>& features, unordered_map<int,vector<tuple<int,int> > >& blobs);
