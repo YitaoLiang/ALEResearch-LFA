@@ -34,8 +34,8 @@ BlobTimeFeatures::BlobTimeFeatures(Parameters *param){
 
 	//To get the total number of features:
     resolutions.push_back(make_tuple(15,10)); resolutions.push_back(make_tuple(3,2)); resolutions.push_back(make_tuple(7,4));
-    numBlocks.push_back(make_tuple(210/get<0>(resolutions[0]),160/get<1>(resolutions[0]))); numBlocks.push_back(make_tuple(210/get<0>(resolutions[1]),get<1>(resolutions[1]))); numBlocks.push_back(make_tuple(210/get<0>(resolutions[2]),get<1>(resolutions[2])));
-    numOffsets.push_back(make_tuple(2 * get<0>(numBlocks[0])-1, 2*get<1>(numBlocks[0])));  numOffsets.push_back(make_tuple(2 * get<0>(numBlocks[1])-1, 2*get<1>(numBlocks[1])));  numOffsets.push_back(make_tuple(2 * get<0>(numBlocks[2])-1, 2*get<1>(numBlocks[2])));
+    numBlocks.push_back(make_tuple(210/get<0>(resolutions[0]),160/get<1>(resolutions[0]))); numBlocks.push_back(make_tuple(210/get<0>(resolutions[1]),160/get<1>(resolutions[1]))); numBlocks.push_back(make_tuple(210/get<0>(resolutions[2]),160/get<1>(resolutions[2])));
+    numOffsets.push_back(make_tuple(2 * get<0>(numBlocks[0])-1, 2*get<1>(numBlocks[0])-1));  numOffsets.push_back(make_tuple(2 * get<0>(numBlocks[1])-1, 2*get<1>(numBlocks[1])-1));  numOffsets.push_back(make_tuple(2 * get<0>(numBlocks[2])-1, 2*get<1>(numBlocks[2])-1));
     
     numBasicFeaturesPart1 = numColors*get<0>(numBlocks[0])*get<1>(numBlocks[0]); numBasicFeaturesPart2 =numColors*get<0>(numBlocks[1])*get<1>(numBlocks[1]); numBasicFeaturesPart3 = numColors*get<0>(numBlocks[2])*get<1>(numBlocks[2]);
     numBasicFeatures = numBasicFeaturesPart1 + numBasicFeaturesPart2 + numBasicFeaturesPart3;
@@ -87,6 +87,8 @@ BlobTimeFeatures::BlobTimeFeatures(Parameters *param){
     extraNeighbors->push_back(make_tuple(0,-1)); extraNeighbors->push_back(make_tuple(-3,3)); extraNeighbors->push_back(make_tuple(-2,3));  extraNeighbors->push_back(make_tuple(-1,3));
     
     previousBlobs.clear();
+    
+   
 
 }
 
@@ -199,7 +201,6 @@ void BlobTimeFeatures::getBlobs(const ALEScreen &screen){
 void BlobTimeFeatures::addRelativeFeaturesIndices(vector<long long>& features){
     for (int c1=0;c1<numColors;++c1){
         if (blobs[c1].size()>0){
-            cout<<"phase1"<<endl;
             for (auto k=blobs[c1].begin();k!=blobs[c1].end();++k){
                 for (auto h=blobs[c1].begin();h!=blobs[c1].end();++h){
                     
@@ -227,7 +228,6 @@ void BlobTimeFeatures::addRelativeFeaturesIndices(vector<long long>& features){
             }
             resetBproExistence();
         }
-        cout<<"phase2"<<endl;
         for (int c2=c1+1;c2<numColors;++c2){
             if (blobs[c1].size()>0 && blobs[c2].size()>0){
                 for (auto it1=blobs[c1].begin();it1!=blobs[c1].end();++it1){
