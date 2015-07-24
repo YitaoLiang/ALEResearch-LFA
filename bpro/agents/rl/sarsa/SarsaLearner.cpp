@@ -22,9 +22,10 @@ SarsaLearner::SarsaLearner(ALEInterface& ale, Features *features, Parameters *pa
     totalNumberFrames = 0.0;
     maxFeatVectorNorm = 1;
     saveThreshold =0;
-    learningRate = 1.0;
+    
     delta = 0.0;
 	alpha = param->getAlpha();
+    learningRate = alpha;
 	lambda = param->getLambda();
 	traceThreshold = param->getTraceThreshold();
 	numFeatures = features->getNumberOfFeatures();
@@ -81,9 +82,9 @@ void SarsaLearner::updateQValues(vector<long long> &Features, vector<float> &QVa
     void SarsaLearner::updateReplTrace(int action, vector<long long> &Features){
         //e <- gamma * lambda * e
         for(unsigned int a = 0; a < nonZeroElig.size(); a++){
-            int numNonZero = 0;
-            for(unsigned int i = 0; i < nonZeroElig[a].size(); i++){
-                int idx = nonZeroElig[a][i];
+            long long numNonZero = 0;
+            for(unsigned long long i = 0; i < nonZeroElig[a].size(); i++){
+                long long idx = nonZeroElig[a][i];
                 //To keep the trace sparse, if it is
                 //less than a threshold it is zero-ed.
                 e[a][idx] = gamma * lambda * e[a][idx];
@@ -100,7 +101,7 @@ void SarsaLearner::updateQValues(vector<long long> &Features, vector<float> &QVa
         
         //For all i in Fa:
         for(unsigned int i = 0; i < F.size(); i++){
-            int idx = Features[i];
+            long long idx = Features[i];
             //If the trace is zero it is not in the vector
             //of non-zeros, thus it needs to be added
             if(e[action][idx] == 0){
@@ -113,9 +114,9 @@ void SarsaLearner::updateQValues(vector<long long> &Features, vector<float> &QVa
     void SarsaLearner::updateAcumTrace(int action, vector<long long> &Features){
         //e <- gamma * lambda * e
         for(unsigned int a = 0; a < nonZeroElig.size(); a++){
-            int numNonZero = 0;
+            long long numNonZero = 0;
             for(unsigned int i = 0; i < nonZeroElig[a].size(); i++){
-                int idx = nonZeroElig[a][i];
+                long long idx = nonZeroElig[a][i];
                 //To keep the trace sparse, if it is
                 //less than a threshold it is zero-ed.
                 e[a][idx] = gamma * lambda * e[a][idx];
@@ -132,7 +133,7 @@ void SarsaLearner::updateQValues(vector<long long> &Features, vector<float> &QVa
         
         //For all i in Fa:
         for(unsigned int i = 0; i < F.size(); i++){
-            int idx = Features[i];
+            long long idx = Features[i];
             //If the trace is zero it is not in the vector
             //of non-zeros, thus it needs to be added
             if(e[action][idx] == 0){
@@ -224,11 +225,12 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
 
 	//Repeat (for each episode):
 	//This is going to be interrupted by the ALE code since I set max_num_frames beforehand
+    cout<<"game starts"<<endl;
     for(int episode = episodePassed+1; totalNumberFrames < totalNumberOfFramesToLearn; episode++){
 		//We have to clean the traces every episode:
         for(unsigned int a = 0; a < nonZeroElig.size(); a++){
-            for(unsigned int i = 0; i < nonZeroElig[a].size(); i++){
-                int idx = nonZeroElig[a][i];
+            for(unsigned long long i = 0; i < nonZeroElig[a].size(); i++){
+                long long idx = nonZeroElig[a][i];
                 e[a][idx] = 0.0;
             }
             nonZeroElig[a].clear();
@@ -255,6 +257,7 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
 				//Obtain active features in the new state:
 				Fnext.clear();
 				features->getActiveFeaturesIndices(ale.getScreen(), ale.getRAM(), Fnext);
+                cout<<"one step"<<endl;
 				updateQValues(Fnext, Qnext);     //Update Q-values for the new active features
 				nextAction = epsilonGreedy(Qnext);
 			}

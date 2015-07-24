@@ -40,7 +40,7 @@ class SarsaLearner : public RLLearner{
         vector<vector<float> > e;       //Eligibility trace
         vector<vector<float> > w;     //Theta, weights vector
 		vector<vector<long long> >nonZeroElig;//To optimize the implementation
-        vector<vector<int> > featureSeen;
+        vector<vector<long long> > featureSeen;
     
 
 		/**
