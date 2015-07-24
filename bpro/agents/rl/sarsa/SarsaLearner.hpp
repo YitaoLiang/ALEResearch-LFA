@@ -32,6 +32,8 @@ class SarsaLearner : public RLLearner{
         int totalNumberFrames;
         long long maxFeatVectorNorm;
         int saveThreshold;
+    
+        long long numFeaturesSeen;
 
 		vector<long long> F;					//Set of features active
 		vector<long long> Fnext;              //Set of features active in next state
@@ -40,7 +42,8 @@ class SarsaLearner : public RLLearner{
         vector<vector<float> > e;       //Eligibility trace
         vector<vector<float> > w;     //Theta, weights vector
 		vector<vector<long long> >nonZeroElig;//To optimize the implementation
-        vector<vector<long long> > featureSeen;
+        //vector<vector<long long> > featureSeen;
+        unordered_map<long long,int> featureTranslate;
     
 
 		/**
@@ -82,6 +85,7 @@ class SarsaLearner : public RLLearner{
         void loadWeights();
         void saveCheckPoint(int episode, int totalNumberFrames,  vector<float>& episodeResults, int& frequency, vector<int>& episodeFrames, vector<double>& episodeFps);
         void loadCheckPoint(ifstream& checkPointToLoad);
+        void translateFeatures(vector<long long>& activeFeatures);
     public:
 		SarsaLearner(ALEInterface& ale, Features *features, Parameters *param,int seed);
 		/**

@@ -33,14 +33,13 @@ SarsaLearner::SarsaLearner(ALEInterface& ale, Features *features, Parameters *pa
     saveWeightsEveryXFrames = param->getFrequencySavingWeights();
 	pathWeightsFileToLoad = param->getPathToWeightsFiles();
     
-    featureSeen.resize(numActions);
 	for(int i = 0; i < numActions; i++){
 		//Initialize Q;
 		Q.push_back(0);
 		Qnext.push_back(0);
 		//Initialize e:
-		e.push_back(vector<float>(numFeatures,0.0));
-        w.push_back(vector<float>(numFeatures,0.0));
+		e.push_back(vector<float>());
+        w.push_back(vector<float>());
         nonZeroElig.push_back(vector<long long>());
     }
     episodePassed = 0;
@@ -182,9 +181,11 @@ void SarsaLearner::saveCheckPoint(int episode, int totalNumberFrames, vector<flo
     checkPointFile << episode<<endl;
     checkPointFile << firstReward<<endl;
     checkPointFile << maxFeatVectorNorm<<endl;
-    for (int a=0;a<featureSeen.size();a++){
-        for (int index=0; index<featureSeen[a].size();index++){
-            checkPointFile<<a<<" "<<featureSeen[a][index]<<" "<<w[a][featureSeen[a][index]]<<"\t";
+    for (auto it=featureTranslate.begin(); it!=featureTranslate.end();++it){
+        long long featureIndex = it->first;
+        long long weightIndex = it->second;
+        for (int a=0;a<w.size();a++){
+            checkPointFile<<a<<" "<<featureIndex<<" "<<w[a][weightIndex]<<"\t";
         }
     }
     
@@ -204,10 +205,22 @@ void SarsaLearner::loadCheckPoint(ifstream& checkPointToLoad){
     checkPointToLoad >> episodePassed;
     checkPointToLoad >> firstReward;
     checkPointToLoad >> maxFeatVectorNorm;
-    int action, index;
+    int action;
+    long long featureIndex, weightIndex;
     float weight;
-    while (checkPointToLoad>>action && checkPointToLoad>>index && checkPointToLoad>>weight){
-        w[action][index] = weight;
+    while (checkPointToLoad>>action && checkPointToLoad>>featureIndex && checkPointToLoad>>weight){
+        if (featureTranslate[featureIndex]==0) {
+            weightIndex = numFeaturesSeen;
+            ++numFeaturesSeen;
+            featureTranslate[featureIndex] = numFeaturesSeen;
+            for (int a=0;a<w.size();++a){
+                w[a].push_back(0);
+                e[a].push_back(0);
+            }
+        }else{
+            weightIndex = featureTranslate[featureIndex]-1;
+        }
+        w[action][weightIndex] = weight;
     }
     checkPointToLoad.close();
 }
@@ -237,6 +250,7 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
         
 		F.clear();
 		features->getActiveFeaturesIndices(ale.getScreen(), ale.getRAM(), F);
+        translateFeatures(F);
 		updateQValues(F, Q);
 		currentAction = epsilonGreedy(Q);
 		//Repeat(for each step of episode) until game is over:
@@ -256,6 +270,7 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
 				//Obtain active features in the new state:
 				Fnext.clear();
 				features->getActiveFeaturesIndices(ale.getScreen(), ale.getRAM(), Fnext);
+                translateFeatures(Fnext);
 				updateQValues(Fnext, Qnext);     //Update Q-values for the new active features
 				nextAction = epsilonGreedy(Qnext);
 			}
@@ -278,10 +293,7 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
 			//Update weights vector:
             for(unsigned int a = 0; a < nonZeroElig.size(); a++){
                 for(unsigned int i = 0; i < nonZeroElig[a].size(); i++){
-                    int idx = nonZeroElig[a][i];
-                    if (w[a][idx]==0 && delta!=0){
-                        featureSeen[a].push_back(idx);
-                    }
+                    long long idx = nonZeroElig[a][i];
                     w[a][idx] = w[a][idx] + (alpha/maxFeatVectorNorm) * delta * e[a][idx];
                     
                 }
@@ -351,6 +363,31 @@ void SarsaLearner::evaluatePolicy(ALEInterface& ale, Features *features){
     resultFile<<"Average: "<<(double)cumReward/numEpisodesEval<<std::endl;
     resultFile.close();
     rename(oldName.c_str(),newName.c_str());
+    
+}
+
+void SarsaLearner::translateFeatures(vector<long long>& activeFeatures){
+    bool newFeatures = false;
+    for(unsigned long long i = 0; i < activeFeatures.size(); ++i)
+    {
+        if(featureTranslate[activeFeatures[i]] == 0)
+        {
+            ++numFeaturesSeen;
+            featureTranslate[activeFeatures[i]] = numFeaturesSeen;
+            newFeatures = true;
+        }
+        
+        activeFeatures[i] = featureTranslate[activeFeatures[i]] - 1;
+    }
+    
+    if(newFeatures)
+    {
+        for(unsigned a = 0; a < w.size(); a++)
+        {
+            w[a].resize(numFeaturesSeen, 0.0);
+            e[a].resize(numFeaturesSeen, 0.0);
+        }
+    }
     
 }
 
