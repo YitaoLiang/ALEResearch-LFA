@@ -121,12 +121,12 @@ void BlobTimeFeatures::getBlobs(const ALEScreen &screen){
     for (int x=0;x<screenHeight;x++){
         for (int y=0;y<screenWidth;y++){
             int color = screen.get(x,y);
-            if (y>0 && color == screen.get(x,y-1)){
+            color = color >>colorMultiplier;
+            if (y>0 && color == screen.get(x,y-1)>>colorMultiplier){
                 neighbors = extraNeighbors;
             }else{
                 neighbors = fullNeighbors;
             }
-            color = color >>colorMultiplier;
             int currentIndex = (x+neighborSize)*width + (y+neighborSize);
             
             for (auto it=neighbors->begin();it!=neighbors->end();++it){
