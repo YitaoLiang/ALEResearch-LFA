@@ -1,12 +1,12 @@
 /****************************************************************************************
-** Implementation of a variation of BASS Features, which has features to encode the 
-**  relative position between tiles.
-**
-** REMARKS: - This implementation is basically Erik Talvitie's implementation, presented
-**            in the AAAI'15 LGCVG Workshop.
-**
-** Author: Marlos C. Machado
-***************************************************************************************/
+ ** Implementation of a variation of BASS Features, which has features to encode the
+ **  relative position between tiles.
+ **
+ ** REMARKS: - This implementation is basically Erik Talvitie's implementation, presented
+ **            in the AAAI'15 LGCVG Workshop.
+ **
+ ** Author: Marlos C. Machado
+ ***************************************************************************************/
 
 #ifndef Blob_TIME_FEATURES_H
 #define Blob_TIME_FEATURES_H
@@ -24,15 +24,15 @@ using namespace std;
 BlobTimeFeatures::BlobTimeFeatures(Parameters *param){
     this->param = param;
     //numColumns  = param->getNumColumns();
-	//numRows     = param->getNumRows();
-	numColors   = param->getNumColors();
+    //numRows     = param->getNumRows();
+    numColors   = param->getNumColors();
     colorMultiplier =(int) log2(256 / numColors);
-
-	if(this->param->getSubtractBackground()){
+    
+    if(this->param->getSubtractBackground()){
         this->background = new Background(param);
     }
-
-	//To get the total number of features:
+    
+    //To get the total number of features:
     resolutions.push_back(make_tuple(15,10)); resolutions.push_back(make_tuple(3,2)); resolutions.push_back(make_tuple(7,4));
     numBlocks.push_back(make_tuple(210/get<0>(resolutions[0]),160/get<1>(resolutions[0]))); numBlocks.push_back(make_tuple(210/get<0>(resolutions[1]),160/get<1>(resolutions[1]))); numBlocks.push_back(make_tuple(210/get<0>(resolutions[2]),160/get<1>(resolutions[2])));
     numOffsets.push_back(make_tuple(2 * get<0>(numBlocks[0])-1, 2*get<1>(numBlocks[0])-1));  numOffsets.push_back(make_tuple(2 * get<0>(numBlocks[1])-1, 2*get<1>(numBlocks[1])-1));  numOffsets.push_back(make_tuple(2 * get<0>(numBlocks[2])-1, 2*get<1>(numBlocks[2])-1));
@@ -94,8 +94,8 @@ BlobTimeFeatures::BlobTimeFeatures(Parameters *param){
     }
     previousBlobs.clear();
     
-   
-
+    
+    
 }
 
 BlobTimeFeatures::~BlobTimeFeatures(){
@@ -113,8 +113,8 @@ void BlobTimeFeatures::getBlobs(const ALEScreen &screen){
     vector<Disjoint_Set_Element> disjoint_set;
     vector<unordered_set<int> > blobIndices(numColors,unordered_set<int>());
     vector<int> route;
-
-     vector<tuple<int,int> >* neighbors;
+    
+    vector<tuple<int,int> >* neighbors;
     
     int width = screenWidth+2*neighborSize;
     
@@ -161,7 +161,7 @@ void BlobTimeFeatures::getBlobs(const ALEScreen &screen){
                                 blobNeighbor->columnRight = y;
                             }
                             blobNeighbor->size+=1;
-                        //case 2: current pixel belongs to two blobs
+                            //case 2: current pixel belongs to two blobs
                         }else{
                             auto currentBlob = &disjoint_set[currentRoot];
                             if (blobNeighbor->size>currentBlob->size){
@@ -196,11 +196,11 @@ void BlobTimeFeatures::getBlobs(const ALEScreen &screen){
     }
     
     /*
-    for (int index = 0;index<disjoint_set.size();index++){
-        if (disjoint_set[index].parent==index){
-            blobs[disjoint_set[index].color].push_back(make_tuple((disjoint_set[index].rowUp+disjoint_set[index].rowDown)/2,(disjoint_set[index].columnLeft+disjoint_set[index].columnRight)/2));
-        }
-    }*/
+     for (int index = 0;index<disjoint_set.size();index++){
+     if (disjoint_set[index].parent==index){
+     blobs[disjoint_set[index].color].push_back(make_tuple((disjoint_set[index].rowUp+disjoint_set[index].rowDown)/2,(disjoint_set[index].columnLeft+disjoint_set[index].columnRight)/2));
+     }
+     }*/
     
     //get all the blobs
     for (int color = 0;color<numColors;++color){
@@ -282,13 +282,13 @@ void BlobTimeFeatures::getBasicFeatures(vector<long long>& features,  unordered_
 }
 
 void BlobTimeFeatures::getActiveFeaturesIndices(const ALEScreen &screen, const ALERAM &ram, vector<long long>& features){
-	
+    
     blobs.clear();
     getBlobs(screen);
     /*for (auto it=blobs.begin();it!=blobs.end();++it){
-        cout<<it->first<<' '<<it->second.size()<<endl;
-    }
-    cout<<endl;*/
+     cout<<it->first<<' '<<it->second.size()<<endl;
+     }
+     cout<<endl;*/
     getBasicFeatures(features,blobs);
     addRelativeFeaturesIndices(features);
     if (previousBlobs.size()>0){
@@ -321,7 +321,7 @@ void BlobTimeFeatures::addTimeDimensionalOffsets(vector<long long>& features){
             }
         }
     }
-
+    
 }
 
 long long BlobTimeFeatures::getNumberOfFeatures(){
