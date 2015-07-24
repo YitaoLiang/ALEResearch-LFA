@@ -383,7 +383,6 @@ void SarsaLearner::translateFeatures(vector<long long>& activeFeatures){
     
     if(newFeatures)
     {
-        cout<<numFeaturesSeen<<endl;
         for(unsigned a = 0; a < w.size(); a++)
         {
             w[a].resize(numFeaturesSeen, 0.0);
