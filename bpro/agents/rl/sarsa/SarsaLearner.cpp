@@ -225,7 +225,6 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
 
 	//Repeat (for each episode):
 	//This is going to be interrupted by the ALE code since I set max_num_frames beforehand
-    cout<<"game starts"<<endl;
     for(int episode = episodePassed+1; totalNumberFrames < totalNumberOfFramesToLearn; episode++){
 		//We have to clean the traces every episode:
         for(unsigned int a = 0; a < nonZeroElig.size(); a++){
@@ -257,7 +256,6 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
 				//Obtain active features in the new state:
 				Fnext.clear();
 				features->getActiveFeaturesIndices(ale.getScreen(), ale.getRAM(), Fnext);
-                cout<<"one step"<<endl;
 				updateQValues(Fnext, Qnext);     //Update Q-values for the new active features
 				nextAction = epsilonGreedy(Qnext);
 			}
