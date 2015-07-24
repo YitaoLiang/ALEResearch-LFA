@@ -25,7 +25,7 @@ struct Disjoint_Set_Element{
     int rowUp, rowDown, columnLeft, columnRight;
     int size;
     int parent;
-    //int color;
+    int color;
 };
 
 using namespace std;

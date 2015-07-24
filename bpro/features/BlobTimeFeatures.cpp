@@ -26,7 +26,7 @@ BlobTimeFeatures::BlobTimeFeatures(Parameters *param){
     //numColumns  = param->getNumColumns();
 	//numRows     = param->getNumRows();
 	numColors   = param->getNumColors();
-    colorMultiplier = 256 / numColors;
+    colorMultiplier =(int) log2(256 / numColors);
 
 	if(this->param->getSubtractBackground()){
         this->background = new Background(param);
@@ -126,6 +126,7 @@ void BlobTimeFeatures::getBlobs(const ALEScreen &screen){
             }else{
                 neighbors = fullNeighbors;
             }
+            color = color >>colorMultiplier;
             int currentIndex = (x+neighborSize)*width + (y+neighborSize);
             
             for (auto it=neighbors->begin();it!=neighbors->end();++it){
@@ -133,7 +134,7 @@ void BlobTimeFeatures::getBlobs(const ALEScreen &screen){
                 int neighborY = get<1>(*it)+y;
                 
                 int neighborRoot = screenPixels[(neighborX+neighborSize)*width+neighborY+neighborSize];
-                if (neighborRoot!=-1 && screen.get(neighborX,neighborY)==color){
+                if (neighborRoot!=-1 && color == disjoint_set[neighborRoot].color){
                     //get the true root
                     route.clear();
                     while (disjoint_set[neighborRoot].parent!=neighborRoot){
@@ -165,12 +166,12 @@ void BlobTimeFeatures::getBlobs(const ALEScreen &screen){
                             auto currentBlob = &disjoint_set[currentRoot];
                             if (blobNeighbor->size>currentBlob->size){
                                 currentBlob->parent = neighborRoot;
-                                blobIndices[color/colorMultiplier].erase(currentRoot);
+                                blobIndices[color].erase(currentRoot);
                                 updateRepresentatiePixel(x,y,blobNeighbor,currentBlob);
                                 screenPixels[currentIndex] = neighborRoot;
                             }else{
                                 blobNeighbor->parent = currentRoot;
-                                blobIndices[color/colorMultiplier].erase(neighborRoot);
+                                blobIndices[color].erase(neighborRoot);
                                 updateRepresentatiePixel(x,y,currentBlob,blobNeighbor);
                             }
                         }
@@ -186,8 +187,8 @@ void BlobTimeFeatures::getBlobs(const ALEScreen &screen){
                 element.size = 1;
                 element.parent = disjoint_set.size();
                 screenPixels[currentIndex] = disjoint_set.size();
-                //element.color = color / colorMultiplier;
-                blobIndices[color/colorMultiplier].insert(disjoint_set.size());
+                element.color = color;
+                blobIndices[color].insert(disjoint_set.size());
                 disjoint_set.push_back(element);
             }
             
