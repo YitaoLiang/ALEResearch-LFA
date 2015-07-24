@@ -293,6 +293,7 @@ void BlobTimeFeatures::getActiveFeaturesIndices(const ALEScreen &screen, const A
     if (previousBlobs.size()>0){
         addTimeDimensionalOffsets(features);
     }
+    features.push_back(numBasicFeatures+numRelativeFeatures + numTimeDimensionalOffsets);
     previousBlobs = blobs;
 }
 
