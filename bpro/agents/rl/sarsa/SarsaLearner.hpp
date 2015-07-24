@@ -37,10 +37,10 @@ class SarsaLearner : public RLLearner{
 		vector<long long> Fnext;              //Set of features active in next state
 		vector<float> Q;               //Q(a) entries
 		vector<float> Qnext;           //Q(a) entries for next action
-    vector<unordered_map<long long, float> > e;       //Eligibility trace
-    vector<unordered_map<long long, float> > w;     //Theta, weights vector
-		//vector<vector<long long> >nonZeroElig;//To optimize the implementation
-        //vector<vector<int> > featureSeen;
+        vector<vector<float> > e;       //Eligibility trace
+        vector<vector<float> > w;     //Theta, weights vector
+		vector<vector<long long> >nonZeroElig;//To optimize the implementation
+        vector<vector<int> > featureSeen;
     
 
 		/**
