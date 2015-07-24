@@ -22,9 +22,10 @@ SarsaLearner::SarsaLearner(ALEInterface& ale, Features *features, Parameters *pa
     totalNumberFrames = 0.0;
     maxFeatVectorNorm = 1;
     saveThreshold =0;
-    learningRate = 1.0;
+    
     delta = 0.0;
 	alpha = param->getAlpha();
+    learningRate = alpha;
 	lambda = param->getLambda();
 	traceThreshold = param->getTraceThreshold();
 	numFeatures = features->getNumberOfFeatures();
