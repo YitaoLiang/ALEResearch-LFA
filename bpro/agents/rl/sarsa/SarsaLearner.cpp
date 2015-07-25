@@ -186,7 +186,9 @@ void SarsaLearner::saveCheckPoint(int episode, int totalNumberFrames, vector<flo
         long long featureIndex = it->first;
         long long weightIndex = it->second;
         for (int a=0;a<w.size();a++){
-            checkPointFile<<a<<" "<<featureIndex<<" "<<w[a][weightIndex]<<"\t";
+            if (w[a][weightIndex]!=0){
+                checkPointFile<<a<<" "<<featureIndex<<" "<<w[a][weightIndex]<<"\t";
+            }
         }
     }
     
