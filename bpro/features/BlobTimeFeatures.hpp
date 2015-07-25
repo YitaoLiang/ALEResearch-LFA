@@ -35,19 +35,16 @@ class BlobTimeFeatures : public Features::Features{
 		Parameters *param;
 		Background *background;
 		
-		long long numBasicFeatures, numRelativeFeatures, numTimeDimensionalOffsets;
-        long long numBasicFeaturesPart1, numBasicFeaturesPart2,numBasicFeaturesPart3;
+		long long numBasicFeatures, numRelativeFeatures, numTimeDimensionalOffsets, numThreePointOffsets;
         int numColors;
         int colorMultiplier;
     
+        int numResolutions;
         vector<tuple<int,int> >* fullNeighbors;
         vector<tuple<int,int> >* extraNeighbors;
     
         unordered_map<int,vector<tuple<int,int> > > blobs;
         unordered_map<int,vector<tuple<int,int> > > previousBlobs;
-    
-        vector<vector<bool> > bproExistencePart1, bproExistencePart2, bproExistencePart3;
-        vector<tuple<int,int> > changedPart1, changedPart2, changedPart3;
     
         vector<tuple<int,int> > resolutions;
         vector<tuple<int,int> > numBlocks;
@@ -56,7 +53,10 @@ class BlobTimeFeatures : public Features::Features{
         vector<vector<vector<bool> > > bproExistence;
         vector<vector<tuple<int,int> > > changed;
     
-        vector<long long> baseBpro, baseTime;
+        vector<unordered_map<long long,int> > threePointExistence;
+        vector<vector<long long> > threePointChanged;
+    
+        vector<long long> baseBpro, baseTime, baseBasic, baseThreePoint;
     
         int neighborSize;
     
@@ -64,9 +64,12 @@ class BlobTimeFeatures : public Features::Features{
     void getBasicFeatures(vector<long long>& features, unordered_map<int,vector<tuple<int,int> > >& blobs);
     void addRelativeFeaturesIndices(vector<long long>& features);
     void addTimeDimensionalOffsets(vector<long long>& features);
+    void addThreePointOffsetsIndices(vector<long long>& features, tuple<int,int>& offset, tuple<int,int>& p1, long long& bproIndex);
     void resetBproExistence();
+    void resetThreePointExistence();
     void updateRepresentatiePixel(int& x, int& y, Disjoint_Set_Element* root, Disjoint_Set_Element* other);
     int getPowerTwoOffset(int rawDelta);
+    
 	public:
 		/**
 		* Destructor, used to delete the background, which is allocated dynamically.
