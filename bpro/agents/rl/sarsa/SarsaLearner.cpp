@@ -205,7 +205,7 @@ void SarsaLearner::saveCheckPoint(int episode, int totalNumberFrames, vector<flo
 void SarsaLearner::loadCheckPoint(ifstream& checkPointToLoad){
     checkPointToLoad >> agentRand;
     checkPointToLoad >> totalNumberFrames;
-    while (totalNumberOfFramesToLearn<1000){
+    while (totalNumberFrames<1000){
         checkPointToLoad >> totalNumberFrames;
     }
     checkPointToLoad >> episodePassed;
