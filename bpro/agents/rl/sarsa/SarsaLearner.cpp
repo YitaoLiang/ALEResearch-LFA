@@ -274,10 +274,11 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
         translateFeatures(F);
 		updateQValues(F, Q);
 		currentAction = epsilonGreedy(Q);
-		//Repeat(for each step of episode) until game is over:
 		gettimeofday(&tvBegin, NULL);
+        int lives = ale.lives();
+        //Repeat(for each step of episode) until game is over:
 		//This also stops when the maximum number of steps per episode is reached
-		while(!ale.game_over()){
+		while(!ale.game_over() && lives == ale.lives()){
 			reward.clear();
 			reward.push_back(0.0);
 			reward.push_back(0.0);
