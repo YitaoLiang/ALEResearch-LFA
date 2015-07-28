@@ -182,13 +182,23 @@ void SarsaLearner::saveCheckPoint(int episode, int totalNumberFrames, vector<flo
     checkPointFile << episode<<endl;
     checkPointFile << firstReward<<endl;
     checkPointFile << maxFeatVectorNorm<<endl;
+    vector<int> nonZeroWeights;
     for (auto it=featureTranslate.begin(); it!=featureTranslate.end();++it){
         long long featureIndex = it->first;
-        long long weightIndex = it->second;
+        long long weightIndex = it->second-1;
+        nonZeroWeights.clear();
         for (int a=0;a<w.size();a++){
             if (w[a][weightIndex]!=0){
-                checkPointFile<<a<<" "<<featureIndex<<" "<<w[a][weightIndex]<<"\t";
+                nonZeroWeights.push_back(a);
             }
+        }
+        if (nonZeroWeights.size()>0){
+            checkPointFile<<featureIndex<<" "<<nonZeroWeights.size();
+            for (int i=0;i<nonZeroWeights.size();++i){
+                int action = nonZeroWeights[i];
+                checkPointFile<<" "<<action<<" "<<w[action][weightIndex];
+            }
+            checkPointFile<<"\t";
         }
     }
     
@@ -211,11 +221,12 @@ void SarsaLearner::loadCheckPoint(ifstream& checkPointToLoad){
     checkPointToLoad >> episodePassed;
     checkPointToLoad >> firstReward;
     checkPointToLoad >> maxFeatVectorNorm;
-    int action;
+    long long action;
     long long featureIndex, weightIndex;
     float weight;
-    while (checkPointToLoad>>action && checkPointToLoad>>featureIndex && checkPointToLoad>>weight){
-        if (featureTranslate[featureIndex]==0) {
+    int numNonZeroWeights;
+    while (checkPointToLoad>>featureIndex && checkPointToLoad>>numNonZeroWeights){
+        if (featureTranslate[featureIndex]==0){
             weightIndex = numFeaturesSeen;
             ++numFeaturesSeen;
             featureTranslate[featureIndex] = numFeaturesSeen;
@@ -226,7 +237,11 @@ void SarsaLearner::loadCheckPoint(ifstream& checkPointToLoad){
         }else{
             weightIndex = featureTranslate[featureIndex]-1;
         }
-        w[action][weightIndex] = weight;
+        
+        for (int i=0;i<numNonZeroWeights;i++){
+            checkPointToLoad>>action; checkPointToLoad>>weight;
+            w[action][weightIndex]=weight;
+        }
     }
     checkPointToLoad.close();
 }
