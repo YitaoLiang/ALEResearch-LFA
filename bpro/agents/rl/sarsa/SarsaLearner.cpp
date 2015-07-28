@@ -288,7 +288,7 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
 			//Take action, observe reward and next state:
 			act(ale, currentAction, reward);
 			cumReward  += reward[1];
-			if(!ale.game_over()){
+			if(!ale.game_over()==lives==ale.lives()){
 				//Obtain active features in the new state:
 				Fnext.clear();
 				features->getActiveFeaturesIndices(ale.getScreen(), ale.getRAM(), Fnext);
