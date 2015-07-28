@@ -33,7 +33,7 @@ BlobTimeFeatures::BlobTimeFeatures(Parameters *param){
     }
 
     //To get the total number of features:
-    numResolutions = 1;
+    numResolutions = 3;
     numBasicFeatures = 0;
     numRelativeFeatures = 0;
     numThreePointOffsets = 0;
@@ -55,7 +55,7 @@ BlobTimeFeatures::BlobTimeFeatures(Parameters *param){
         baseBasic.push_back(baseBasic.back()+numColors*get<0>(numBlocks[index])*get<1>(numBlocks[index]));
         baseBpro.push_back(baseBpro.back()+get<0>(numOffsets[index]) * get<1>(numOffsets[index])* (1+numColors) * numColors/2);
         baseTime.push_back(baseTime.back()+ get<0>(numOffsets[index]) * get<1>(numOffsets[index]) * numColors * numColors);
-        baseThreePoint.push_back(baseThreePoint.back()+get<0>(numOffsets[index]) * get<1>(numOffsets[index])* (1+numColors) * numColors/2 * numColors* get<0>(numOffsets[index])*get<1>(numOffsets[index]));
+        //baseThreePoint.push_back(baseThreePoint.back()+get<0>(numOffsets[index]) * get<1>(numOffsets[index])* (1+numColors) * numColors/2 * numColors* get<0>(numOffsets[index])*get<1>(numOffsets[index]));
     }
     
     //set up table to prevent repetitive features
@@ -69,8 +69,8 @@ BlobTimeFeatures::BlobTimeFeatures(Parameters *param){
                 bproExistence[index][i][j]=true;
             }
         }
-        threePointChanged.push_back(vector<long long>());
-        threePointExistence.push_back(unordered_map<long long,int>());
+        //threePointChanged.push_back(vector<long long>());
+        //threePointExistence.push_back(unordered_map<long long,int>());
     }
     
     neighborSize = 3;
@@ -234,16 +234,16 @@ void BlobTimeFeatures::addRelativeFeaturesIndices(vector<long long>& features){
                         }
                         
                         //add three point feature
-                        if (previousBlobs.size()>0){
+                        /*if (previousBlobs.size()>0){
                             addThreePointOffsetsIndices(features,pos,*k,bproIndex);
-                        }
+                        }*/
 
                     }
                     
                 }
             }
             resetBproExistence();
-            resetThreePointExistence();
+            //resetThreePointExistence();
         }
         for (int c2=c1+1;c2<numColors;++c2){
             if (blobs[c1].size()>0 && blobs[c2].size()>0){
@@ -262,16 +262,16 @@ void BlobTimeFeatures::addRelativeFeaturesIndices(vector<long long>& features){
                             }
                             
                             //add three point feature
-                            if (previousBlobs.size()>0){
+                            /*if (previousBlobs.size()>0){
                                 addThreePointOffsetsIndices(features,pos,*it1,bproIndex);
-                            }
+                            }*/
 
                             
                         }
                     }
                 }
                 resetBproExistence();
-                resetThreePointExistence();
+                //resetThreePointExistence();
             }
         }
     }
