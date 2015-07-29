@@ -364,8 +364,8 @@ void SarsaLearner::evaluatePolicy(ALEInterface& ale, Features *features){
 			//Get state and features active on that state:		
 			F.clear();
 			features->getActiveFeaturesIndices(ale.getScreen(), ale.getRAM(), F);
-			updateQValues(F, Q);       //Update Q-values for each possible action
             translateFeatures(F);
+			updateQValues(F, Q);       //Update Q-values for each possible action
 			currentAction = epsilonGreedy(Q);
 			//Take action, observe reward and next state:
 			reward = ale.act(actions[currentAction]);
