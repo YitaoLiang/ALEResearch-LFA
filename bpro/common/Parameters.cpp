@@ -158,10 +158,10 @@ void Parameters::parseParametersFromConfigFile(std::string cfgFileName){
 		while( getline(cfgFile, line)){
 			if(line.length() > 0){
 				std::vector<std::string> parsed = parseLine(line);
-				//Add the parsed elements to an appropriate structure:
+                //Add the parsed elements to an appropriate structure:
 				if(parsed.size() == 2){
 					parameters[parsed[0]] = parsed[1];
-				}
+                }
 			}
 		}
 		cfgFile.close();
@@ -202,7 +202,7 @@ void Parameters::parseParametersFromConfigFile(std::string cfgFileName){
     }else{
         this->setResolutions(3);
     }
-    
+     
     if (parameters.count("EPSILON_DECAY")>0){
         this->setEpsilonDecay(atoi(parameters["EPSILON_DECAY"].c_str()));
     }else{

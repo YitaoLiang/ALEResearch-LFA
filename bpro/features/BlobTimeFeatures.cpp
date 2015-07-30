@@ -34,7 +34,6 @@ BlobTimeFeatures::BlobTimeFeatures(Parameters *param){
 
     //To get the total number of features:
     numResolutions = param->getResolutions();
-    cout<<numResolutions<<endl;
     numBasicFeatures = 0;
     numRelativeFeatures = 0;
     numThreePointOffsets = 0;
@@ -113,6 +112,7 @@ void BlobTimeFeatures::getBlobs(const ALEScreen &screen){
     vector<tuple<int,int> >* neighbors;
     
     int width = screenWidth+2*neighborSize;
+    
     
     for (int x=0;x<screenHeight;x++){
         for (int y=0;y<screenWidth;y++){

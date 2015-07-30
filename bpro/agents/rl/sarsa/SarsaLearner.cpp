@@ -273,7 +273,7 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
 		features->getActiveFeaturesIndices(ale.getScreen(), ale.getRAM(), F);
         translateFeatures(F);
 		updateQValues(F, Q);
-		currentAction = epsilonGreedy(Q);
+		currentAction = epsilonGreedy(Q,episode);
 		gettimeofday(&tvBegin, NULL);
         int lives = ale.lives();
         //Repeat(for each step of episode) until game is over:
@@ -294,7 +294,7 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
 				features->getActiveFeaturesIndices(ale.getScreen(), ale.getRAM(), Fnext);
                 translateFeatures(Fnext);
 				updateQValues(Fnext, Qnext);     //Update Q-values for the new active features
-				nextAction = epsilonGreedy(Qnext);
+				nextAction = epsilonGreedy(Qnext,episode);
 			}
 			else{
 				nextAction = 0;
