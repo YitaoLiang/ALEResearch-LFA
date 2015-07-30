@@ -33,7 +33,8 @@ BlobTimeFeatures::BlobTimeFeatures(Parameters *param){
     }
 
     //To get the total number of features:
-    numResolutions = 3;
+    numResolutions = param->getResolutions();
+    cout<<numResolutions<<endl;
     numBasicFeatures = 0;
     numRelativeFeatures = 0;
     numThreePointOffsets = 0;
