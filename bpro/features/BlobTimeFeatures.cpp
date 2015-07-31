@@ -231,7 +231,6 @@ void BlobTimeFeatures::addRelativeFeaturesIndices(vector<long long>& features){
                             changed[index].push_back(pos);
                             bproExistence[index][rowDelta][columnDelta]=false;
                             features.push_back(baseBpro[index]+bproIndex);
-                            
                         }
                         
                         //add three point feature
@@ -279,13 +278,18 @@ void BlobTimeFeatures::addRelativeFeaturesIndices(vector<long long>& features){
 }
 
 void BlobTimeFeatures::getBasicFeatures(vector<long long>& features,  unordered_map<int,vector<tuple<int,int> > >& blobs){
+    vector<bool> basicNotExistence(numBasicFeatures,true);
     for (auto it=blobs.begin();it!=blobs.end();++it){
         int color = it->first;
         for (auto itt=it->second.begin();itt!=it->second.end();++itt){
             int x = get<0>(*itt);
             int y = get<1>(*itt);
             for (int index=0;index<numResolutions;++index){
-                features.push_back(baseBasic[index]+x/get<0>(resolutions[index])*get<1>(numBlocks[index])+y/get<1>(resolutions[index]));
+                long long featureIndex = baseBasic[index]+x/get<0>(resolutions[index])*get<1>(numBlocks[index])+y/get<1>(resolutions[index]);
+                if (basicNotExistence[featureIndex]){
+                    features.push_back(featureIndex);
+                    basicNotExistence[featureIndex] = false;
+                }
             }
         }
     }
