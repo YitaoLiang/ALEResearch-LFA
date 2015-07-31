@@ -184,21 +184,19 @@ void SarsaLearner::saveCheckPoint(int episode, int totalNumberFrames, vector<flo
     checkPointFile << maxFeatVectorNorm<<endl;
     checkPointFile << numGroups<<endl;
     vector<int> nonZeroWeights;
-    for (unsigned long long groupIndex=0; groupIndex<w[0].size();++groupIndex){
+    for (unsigned long long groupIndex=0; groupIndex<numGroups;++groupIndex){
         nonZeroWeights.clear();
         for (unsigned long long a=0; a<w.size();a++){
             if (w[a][groupIndex]!=0){
                 nonZeroWeights.push_back(a);
             }
         }
-        if (nonZeroWeights.size()>0){
-            checkPointFile<<nonZeroWeights.size();
-            for (int i=0;i<nonZeroWeights.size();++i){
-                int action = nonZeroWeights[i];
-                checkPointFile<<" "<<action<<" "<<w[action][groupIndex];
-            }
-            checkPointFile<<"\t";
+        checkPointFile<<nonZeroWeights.size();
+        for (int i=0;i<nonZeroWeights.size();++i){
+            int action = nonZeroWeights[i];
+            checkPointFile<<" "<<action<<" "<<w[action][groupIndex];
         }
+        checkPointFile<<"\t";
     }
     checkPointFile << endl;
     
@@ -225,7 +223,14 @@ void SarsaLearner::loadCheckPoint(ifstream& checkPointToLoad){
     checkPointToLoad >> episodePassed;
     checkPointToLoad >> firstReward;
     checkPointToLoad >> maxFeatVectorNorm;
+    learningRate = alpha / float(maxFeatVectorNorm);
     checkPointToLoad >> numGroups;
+    for (unsigned long long index=0;index<numGroups;++index){
+        Group agroup;
+        agroup.numFeatures = 0;
+        agroup.features.clear();
+        groups.push_back(agroup);
+    }
     for (unsigned a =0;a<w.size();a++){
         w[a].resize(numGroups,0.00);
         e[a].resize(numGroups,0.00);
@@ -245,6 +250,7 @@ void SarsaLearner::loadCheckPoint(ifstream& checkPointToLoad){
     long long featureToGroup;
     while (checkPointToLoad >> featureIndex && checkPointToLoad >> featureToGroup){
         featureTranslate[featureIndex] = featureToGroup;
+        groups[featureToGroup-1].numFeatures+=1;
     }
     checkPointToLoad.close();
 }
