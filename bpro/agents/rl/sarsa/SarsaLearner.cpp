@@ -17,8 +17,10 @@
 #include <stdio.h>
 #include <math.h>
 using namespace std;
+using google::dense_hash_map;
 
 SarsaLearner::SarsaLearner(ALEInterface& ale, Features *features, Parameters *param,int seed) : RLLearner(ale, param,seed) {
+    
     totalNumberFrames = 0.0;
     maxFeatVectorNorm = 1;
     saveThreshold =0;
@@ -33,6 +35,9 @@ SarsaLearner::SarsaLearner(ALEInterface& ale, Features *features, Parameters *pa
     toSaveCheckPoint = param->getToSaveCheckPoint();
     saveWeightsEveryXFrames = param->getFrequencySavingWeights();
 	pathWeightsFileToLoad = param->getPathToWeightsFiles();
+    
+    featureTranslate.set_empty_key(numFeatures+1);
+    featureTranslate.min_load_factor(0.00);
     
 	for(int i = 0; i < numActions; i++){
 		//Initialize Q;

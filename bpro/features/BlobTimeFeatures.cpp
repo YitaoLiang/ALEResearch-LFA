@@ -18,7 +18,9 @@
 #include <algorithm>
 #include <math.h>
 #include <unordered_set>
+
 using namespace std;
+using google::dense_hash_map;
 
 
 BlobTimeFeatures::BlobTimeFeatures(Parameters *param){
@@ -69,8 +71,9 @@ BlobTimeFeatures::BlobTimeFeatures(Parameters *param){
                 bproExistence[index][i][j]=true;
             }
         }
-        threePointChanged.push_back(vector<long long>());
-        threePointExistence.push_back(unordered_map<long long,int>());
+        threePointExistence.push_back(dense_hash_map<long long,int>());
+        threePointExistence.back().set_empty_key(numThreePointOffsets+1);
+        threePointExistence.back().resize(100000);
     }
     
     neighborSize = 3;
@@ -330,7 +333,6 @@ void BlobTimeFeatures::addThreePointOffsetsIndices(vector<long long>& features, 
                     int columnDelta = get<1>(p1)-get<1>(*it)+get<0>(numBlocks[index])-1;
                     long long threePointIndex = bproIndex*numColors*get<0>(numOffsets[index])*get<1>(numOffsets[index])+c3*get<0>(numOffsets[index])*get<1>(numOffsets[index])+rowDelta*get<1>(numOffsets[index])+columnDelta;
                     if (threePointExistence[index][threePointIndex]==0){
-                        threePointChanged[index].push_back(threePointIndex);
                         threePointExistence[index][threePointIndex]=1;
                         features.push_back(baseThreePoint[index]+threePointIndex);
                     }
@@ -374,10 +376,7 @@ void BlobTimeFeatures::resetBproExistence(){
 
 void BlobTimeFeatures::resetThreePointExistence(){
     for (int index = 0; index<numResolutions;++index){
-        for (auto it=threePointChanged[index].begin();it!=threePointChanged[index].end();it++){
-            threePointExistence[index].erase(*it);
-        }
-        threePointChanged[index].clear();
+        threePointExistence[index].clear();
     }
 }
 

@@ -14,8 +14,9 @@
 #include "../RLLearner.hpp"
 #endif
 #include <vector>
-#include <unordered_map>
+#include <sparsehash/dense_hash_map>
 using namespace std;
+using google::dense_hash_map;
 
 struct Group{
     long long numFeatures;
@@ -48,7 +49,7 @@ class SarsaLearner : public RLLearner{
         vector<vector<float> > w;     //Theta, weights vector
 		vector<vector<long long> >nonZeroElig;//To optimize the implementation
         //vector<vector<long long> > featureSeen;
-        unordered_map<long long,long long> featureTranslate;
+        dense_hash_map<long long,long long> featureTranslate;
         vector<Group> groups;
     
 
