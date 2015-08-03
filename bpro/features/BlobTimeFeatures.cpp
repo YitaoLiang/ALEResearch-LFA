@@ -20,7 +20,7 @@
 #include <unordered_set>
 
 using namespace std;
-using google::dense_hash_map;
+//using google::dense_hash_map;
 
 
 BlobTimeFeatures::BlobTimeFeatures(Parameters *param){
