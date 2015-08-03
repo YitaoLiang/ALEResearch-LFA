@@ -356,13 +356,13 @@ void BlobTimeFeatures::getActiveFeaturesIndices(const ALEScreen &screen, const A
     if (previousBlobs.size()>0){
         addTimeDimensionalOffsets(features);
     }
-    features.push_back(numBasicFeatures+numRelativeFeatures + numTimeDimensionalOffsets+numThreePointOffsets);
+    features.push_back(numBasicFeatures+numRelativeFeatures + numTimeDimensionalOffsets);
     previousBlobs = blobs;
 }
 
 
 long long BlobTimeFeatures::getNumberOfFeatures(){
-    return numBasicFeatures+numRelativeFeatures + numTimeDimensionalOffsets+numThreePointOffsets+1;
+    return numBasicFeatures+numRelativeFeatures + numTimeDimensionalOffsets+1;
 }
 
 void BlobTimeFeatures::resetBproExistence(){
