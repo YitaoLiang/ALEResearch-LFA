@@ -17,8 +17,10 @@
 #include <stdio.h>
 #include <math.h>
 using namespace std;
+using google::dense_hash_map;
 
 SarsaLearner::SarsaLearner(ALEInterface& ale, Features *features, Parameters *param,int seed) : RLLearner(ale, param,seed) {
+    
     totalNumberFrames = 0.0;
     maxFeatVectorNorm = 1;
     saveThreshold =0;
@@ -27,12 +29,15 @@ SarsaLearner::SarsaLearner(ALEInterface& ale, Features *features, Parameters *pa
 	alpha = param->getAlpha();
     learningRate = alpha;
 	lambda = param->getLambda();
-    numFeaturesSeen = 0;
+    numGroups = 0;
 	traceThreshold = param->getTraceThreshold();
 	numFeatures = features->getNumberOfFeatures();
     toSaveCheckPoint = param->getToSaveCheckPoint();
     saveWeightsEveryXFrames = param->getFrequencySavingWeights();
 	pathWeightsFileToLoad = param->getPathToWeightsFiles();
+    
+    featureTranslate.set_empty_key(numFeatures+1);
+    featureTranslate.min_load_factor(0.00);
     
 	for(int i = 0; i < numActions; i++){
 		//Initialize Q;
@@ -44,6 +49,7 @@ SarsaLearner::SarsaLearner(ALEInterface& ale, Features *features, Parameters *pa
         nonZeroElig.push_back(vector<long long>());
     }
     episodePassed = 0;
+    featureTranslate.clear();
 	if(toSaveCheckPoint){
         checkPointName = param->getCheckPointName();
         //load CheckPoint
@@ -62,7 +68,6 @@ SarsaLearner::SarsaLearner(ALEInterface& ale, Features *features, Parameters *pa
         saveThreshold+=saveWeightsEveryXFrames;
         learningConditionFile.open(nameForLearningCondition, ios_base::app);
         learningConditionFile.close();
-
     }
 }
 
@@ -73,75 +78,75 @@ void SarsaLearner::updateQValues(vector<long long> &Features, vector<float> &QVa
 	for(int a = 0; a < numActions; ++a){
 		float sumW = 0;
 		for(unsigned long long i = 0; i < featureSize; ++i){
-            sumW += w[a][Features[i]];
+            sumW = sumW + w[a][Features[i]]*groups[Features[i]].numFeatures;
 		}
 		QValues[a] = sumW;
 	}
 }
 
-    void SarsaLearner::updateReplTrace(int action, vector<long long> &Features){
-        //e <- gamma * lambda * e
-        for(unsigned int a = 0; a < nonZeroElig.size(); a++){
-            long long numNonZero = 0;
-            for(unsigned long long i = 0; i < nonZeroElig[a].size(); i++){
-                long long idx = nonZeroElig[a][i];
-                //To keep the trace sparse, if it is
-                //less than a threshold it is zero-ed.
-                e[a][idx] = gamma * lambda * e[a][idx];
-                if(e[a][idx] < traceThreshold){
-                    e[a][idx] = 0;
-                }
-                else{
-                    nonZeroElig[a][numNonZero] = idx;
-                    numNonZero++;
-                }
+void SarsaLearner::updateReplTrace(int action, vector<long long> &Features){
+    //e <- gamma * lambda * e
+    for(unsigned int a = 0; a < nonZeroElig.size(); a++){
+        long long numNonZero = 0;
+        for(unsigned long long i = 0; i < nonZeroElig[a].size(); i++){
+            long long idx = nonZeroElig[a][i];
+            //To keep the trace sparse, if it is
+            //less than a threshold it is zero-ed.
+            e[a][idx] = gamma * lambda * e[a][idx];
+            if(e[a][idx] < traceThreshold){
+                e[a][idx] = 0;
             }
-            nonZeroElig[a].resize(numNonZero);
-        }
-        
-        //For all i in Fa:
-        for(unsigned int i = 0; i < F.size(); i++){
-            long long idx = Features[i];
-            //If the trace is zero it is not in the vector
-            //of non-zeros, thus it needs to be added
-            if(e[action][idx] == 0){
-                nonZeroElig[action].push_back(idx);
+            else{
+                nonZeroElig[a][numNonZero] = idx;
+                numNonZero++;
             }
-            e[action][idx] = 1;
         }
+        nonZeroElig[a].resize(numNonZero);
     }
     
-    void SarsaLearner::updateAcumTrace(int action, vector<long long> &Features){
-        //e <- gamma * lambda * e
-        for(unsigned int a = 0; a < nonZeroElig.size(); a++){
-            long long numNonZero = 0;
-            for(unsigned int i = 0; i < nonZeroElig[a].size(); i++){
-                long long idx = nonZeroElig[a][i];
-                //To keep the trace sparse, if it is
-                //less than a threshold it is zero-ed.
-                e[a][idx] = gamma * lambda * e[a][idx];
-                if(e[a][idx] < traceThreshold){
-                    e[a][idx] = 0;
-                }
-                else{
-                    nonZeroElig[a][numNonZero] = idx;
-                    numNonZero++;
-                }
-            }
-            nonZeroElig[a].resize(numNonZero);
+    //For all i in Fa:
+    for(unsigned int i = 0; i < F.size(); i++){
+        long long idx = Features[i];
+        //If the trace is zero it is not in the vector
+        //of non-zeros, thus it needs to be added
+        if(e[action][idx] == 0){
+            nonZeroElig[action].push_back(idx);
         }
-        
-        //For all i in Fa:
-        for(unsigned int i = 0; i < F.size(); i++){
-            long long idx = Features[i];
-            //If the trace is zero it is not in the vector
-            //of non-zeros, thus it needs to be added
-            if(e[action][idx] == 0){
-                nonZeroElig[action].push_back(idx);
-            }
-            e[action][idx] += 1;
-        }
+        e[action][idx] = 1;
     }
+}
+
+void SarsaLearner::updateAcumTrace(int action, vector<long long> &Features){
+    //e <- gamma * lambda * e
+    for(unsigned int a = 0; a < nonZeroElig.size(); a++){
+        long long numNonZero = 0;
+        for(unsigned int i = 0; i < nonZeroElig[a].size(); i++){
+            long long idx = nonZeroElig[a][i];
+            //To keep the trace sparse, if it is
+            //less than a threshold it is zero-ed.
+            e[a][idx] = gamma * lambda * e[a][idx];
+            if(e[a][idx] < traceThreshold){
+                e[a][idx] = 0;
+            }
+            else{
+                nonZeroElig[a][numNonZero] = idx;
+                numNonZero++;
+            }
+        }
+        nonZeroElig[a].resize(numNonZero);
+    }
+    
+    //For all i in Fa:
+    for(unsigned int i = 0; i < F.size(); i++){
+        long long idx = Features[i];
+        //If the trace is zero it is not in the vector
+        //of non-zeros, thus it needs to be added
+        if(e[action][idx] == 0){
+            nonZeroElig[action].push_back(idx);
+        }
+        e[action][idx] += 1;
+    }
+}
 
 void SarsaLearner::sanityCheck(){
 	for(int i = 0; i < numActions; i++){
@@ -182,28 +187,31 @@ void SarsaLearner::saveCheckPoint(int episode, int totalNumberFrames, vector<flo
     checkPointFile << episode<<endl;
     checkPointFile << firstReward<<endl;
     checkPointFile << maxFeatVectorNorm<<endl;
+    checkPointFile << numGroups<<endl;
+    checkPointFile << featureTranslate.size()<<endl;
     vector<int> nonZeroWeights;
-    for (auto it=featureTranslate.begin(); it!=featureTranslate.end();++it){
-        long long featureIndex = it->first;
-        long long weightIndex = it->second-1;
+    for (unsigned long long groupIndex=0; groupIndex<numGroups;++groupIndex){
         nonZeroWeights.clear();
-        for (int a=0;a<w.size();a++){
-            if (w[a][weightIndex]!=0){
+        for (unsigned long long a=0; a<w.size();a++){
+            if (w[a][groupIndex]!=0){
                 nonZeroWeights.push_back(a);
             }
         }
-        if (nonZeroWeights.size()>0){
-            checkPointFile<<featureIndex<<" "<<nonZeroWeights.size();
-            for (int i=0;i<nonZeroWeights.size();++i){
-                int action = nonZeroWeights[i];
-                checkPointFile<<" "<<action<<" "<<w[action][weightIndex];
-            }
-            checkPointFile<<"\t";
+        checkPointFile<<nonZeroWeights.size();
+        for (int i=0;i<nonZeroWeights.size();++i){
+            int action = nonZeroWeights[i];
+            checkPointFile<<" "<<action<<" "<<w[action][groupIndex];
         }
+        checkPointFile<<"\t";
     }
-    
     checkPointFile << endl;
+    
+    for (auto it=featureTranslate.begin(); it!=featureTranslate.end();++it){
+        checkPointFile<<it->first<<" "<<it->second<<"\t";
+    }
+    checkPointFile<<endl;
     checkPointFile.close();
+    
     string previousVersionCheckPoint = checkPointName+"-checkPoint-Frames"+to_string(saveThreshold-saveWeightsEveryXFrames)+"-finished.txt";
     remove(previousVersionCheckPoint.c_str());
     string oldCheckPointName = currentCheckPointName;
@@ -221,27 +229,36 @@ void SarsaLearner::loadCheckPoint(ifstream& checkPointToLoad){
     checkPointToLoad >> episodePassed;
     checkPointToLoad >> firstReward;
     checkPointToLoad >> maxFeatVectorNorm;
-    long long action;
-    long long featureIndex, weightIndex;
+    learningRate = alpha / float(maxFeatVectorNorm);
+    checkPointToLoad >> numGroups;
+    long long numberOfFeaturesSeen;
+    checkPointToLoad >> numberOfFeaturesSeen;
+    for (unsigned long long index=0;index<numGroups;++index){
+        Group agroup;
+        agroup.numFeatures = 0;
+        agroup.features.clear();
+        groups.push_back(agroup);
+    }
+    for (unsigned a =0;a<w.size();a++){
+        w[a].resize(numGroups,0.00);
+        e[a].resize(numGroups,0.00);
+    }
+    int action;
     float weight;
     int numNonZeroWeights;
-    while (checkPointToLoad>>featureIndex && checkPointToLoad>>numNonZeroWeights){
-        if (featureTranslate[featureIndex]==0){
-            weightIndex = numFeaturesSeen;
-            ++numFeaturesSeen;
-            featureTranslate[featureIndex] = numFeaturesSeen;
-            for (int a=0;a<w.size();++a){
-                w[a].push_back(0);
-                e[a].push_back(0);
-            }
-        }else{
-            weightIndex = featureTranslate[featureIndex]-1;
+    for (unsigned long long groupIndex=0; groupIndex<numGroups;++groupIndex){
+        checkPointToLoad >> numNonZeroWeights;
+        for (unsigned int i=0; i<numNonZeroWeights;++i){
+            checkPointToLoad >> action; checkPointToLoad >> weight;
+            w[action][groupIndex] = weight;
         }
-        
-        for (int i=0;i<numNonZeroWeights;i++){
-            checkPointToLoad>>action; checkPointToLoad>>weight;
-            w[action][weightIndex]=weight;
-        }
+    }
+    
+    long long featureIndex;
+    long long featureToGroup;
+    while (checkPointToLoad >> featureIndex && checkPointToLoad >> featureToGroup){
+        featureTranslate[featureIndex] = featureToGroup;
+        groups[featureToGroup-1].numFeatures+=1;
     }
     checkPointToLoad.close();
 }
@@ -256,6 +273,9 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
     vector<float> episodeResults;
     vector<int> episodeFrames;
     vector<double> episodeFps;
+    
+    long long trueFeatureSize = 0;
+    long long trueFnextSize = 0;
 
 	//Repeat (for each episode):
 	//This is going to be interrupted by the ALE code since I set max_num_frames beforehand
@@ -271,8 +291,10 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
         
 		F.clear();
 		features->getActiveFeaturesIndices(ale.getScreen(), ale.getRAM(), F);
-        translateFeatures(F);
-		updateQValues(F, Q);
+        trueFeatureSize = F.size();
+        groupFeatures(F);
+        updateQValues(F, Q);
+    
 		currentAction = epsilonGreedy(Q,episode);
 		gettimeofday(&tvBegin, NULL);
         int lives = ale.lives();
@@ -283,7 +305,7 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
 			reward.push_back(0.0);
 			reward.push_back(0.0);
 			updateQValues(F, Q);
-
+            
 			sanityCheck();
 			//Take action, observe reward and next state:
 			act(ale, currentAction, reward);
@@ -292,9 +314,10 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
 				//Obtain active features in the new state:
 				Fnext.clear();
 				features->getActiveFeaturesIndices(ale.getScreen(), ale.getRAM(), Fnext);
-                translateFeatures(Fnext);
-				updateQValues(Fnext, Qnext);     //Update Q-values for the new active features
-				nextAction = epsilonGreedy(Qnext,episode);
+                trueFnextSize = Fnext.size();
+                groupFeatures(Fnext);
+                updateQValues(Fnext, Qnext);     //Update Q-values for the new active features
+                nextAction = epsilonGreedy(Qnext,episode);
 			}
 			else{
 				nextAction = 0;
@@ -304,8 +327,8 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
 			}
 			//To ensure the learning rate will never increase along
 			//the time, Marc used such approach in his JAIR paper		
-			if (F.size() > maxFeatVectorNorm){
-				maxFeatVectorNorm = F.size();
+			if (trueFeatureSize > maxFeatVectorNorm){
+				maxFeatVectorNorm = trueFeatureSize;
                 learningRate = alpha/maxFeatVectorNorm;
 			}
 
@@ -316,11 +339,11 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
             for(unsigned int a = 0; a < nonZeroElig.size(); a++){
                 for(unsigned int i = 0; i < nonZeroElig[a].size(); i++){
                     long long idx = nonZeroElig[a][i];
-                    w[a][idx] = w[a][idx] + (alpha/maxFeatVectorNorm) * delta * e[a][idx];
-                    
+                    w[a][idx] = w[a][idx] + learningRate * delta * e[a][idx];
                 }
             }
 			F = Fnext;
+            trueFeatureSize = trueFnextSize;
 			currentAction = nextAction;
 		}
 		gettimeofday(&tvEnd, NULL);
@@ -365,7 +388,7 @@ void SarsaLearner::evaluatePolicy(ALEInterface& ale, Features *features){
 			//Get state and features active on that state:		
 			F.clear();
 			features->getActiveFeaturesIndices(ale.getScreen(), ale.getRAM(), F);
-            translateFeatures(F);
+            groupFeatures(F);
 			updateQValues(F, Q);       //Update Q-values for each possible action
 			currentAction = epsilonGreedy(Q);
 			//Take action, observe reward and next state:
@@ -390,29 +413,60 @@ void SarsaLearner::evaluatePolicy(ALEInterface& ale, Features *features){
     
 }
 
-void SarsaLearner::translateFeatures(vector<long long>& activeFeatures){
-    bool newFeatures = false;
-    for(unsigned long long i = 0; i < activeFeatures.size(); ++i)
-    {
-        if(featureTranslate[activeFeatures[i]] == 0)
-        {
-            ++numFeaturesSeen;
-            featureTranslate[activeFeatures[i]] = numFeaturesSeen;
-            newFeatures = true;
+void SarsaLearner::groupFeatures(vector<long long>& activeFeatures){
+    long long previousGroupsSize = groups.size();
+    int newGroup = 0;
+    for (unsigned long long i = 0; i <activeFeatures.size();++i){
+        long long featureIndex = activeFeatures[i];
+        if (featureTranslate[featureIndex] == 0){
+            if (newGroup){
+                featureTranslate[featureIndex] = numGroups;
+                groups[numGroups-1].numFeatures+=1;
+            }else{
+                newGroup = 1;
+                Group agroup;
+                agroup.numFeatures = 1;
+                agroup.features.clear();
+                groups.push_back(agroup);
+                for (unsigned int action=0;action<w.size();++action){
+                    w[action].push_back(0.0);
+                    e[action].push_back(0.0);
+                }
+                ++numGroups;
+                featureTranslate[featureIndex] = numGroups;
+            }
+        }else{
+            groups[featureTranslate[featureIndex]-1].features.push_back(featureIndex);
         }
         
-        activeFeatures[i] = featureTranslate[activeFeatures[i]] - 1;
     }
     
-    if(newFeatures)
-    {
-        for(unsigned a = 0; a < w.size(); a++)
-        {
-            w[a].resize(numFeaturesSeen, 0.0);
-            e[a].resize(numFeaturesSeen, 0.0);
+    activeFeatures.clear();
+    if (newGroup){
+        activeFeatures.push_back(groups.size()-1);
+    }
+    
+    for (unsigned long long index=0;index<previousGroupsSize;++index){
+        if (groups[index].features.size()!=0 && groups[index].features.size()!=groups[index].numFeatures){
+            Group agroup;
+            agroup.numFeatures = groups[index].features.size();
+            agroup.features.clear();
+            groups.push_back(agroup);
+             ++numGroups;
+            for (unsigned long long i =0; i<groups[index].features.size();++i){
+                featureTranslate[groups[index].features[i]] = numGroups;
+            }
+            activeFeatures.push_back(numGroups-1);
+            for (unsigned a = 0;a<w.size();++a){
+                w[a].push_back(w[a][index]);
+                e[a].push_back(0.00);
+            }
+            groups[index].numFeatures = groups[index].numFeatures - groups[index].features.size();
+        }else if(groups[index].features.size()==groups[index].numFeatures){
+            activeFeatures.push_back(index);
         }
+        groups[index].features.clear();
     }
-    
 }
 
 void SarsaLearner::saveWeightsToFile(string suffix){

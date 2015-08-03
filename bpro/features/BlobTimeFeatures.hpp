@@ -20,6 +20,8 @@
 #include <tuple>
 #include <set>
 #include <unordered_map>
+#include <sparsehash/dense_hash_map>
+using google::dense_hash_map;
 
 struct Disjoint_Set_Element{
     int rowUp, rowDown, columnLeft, columnRight;
@@ -53,15 +55,14 @@ class BlobTimeFeatures : public Features::Features{
         vector<vector<vector<bool> > > bproExistence;
         vector<vector<tuple<int,int> > > changed;
     
-        vector<unordered_map<long long,int> > threePointExistence;
-        vector<vector<long long> > threePointChanged;
+        vector<dense_hash_map<long long,int> > threePointExistence;
     
         vector<long long> baseBpro, baseTime, baseBasic, baseThreePoint;
     
         int neighborSize;
     
     void getBlobs(const ALEScreen &screen);
-    void getBasicFeatures(vector<long long>& features, unordered_map<int,vector<tuple<int,int> > >& blobs);
+    void getBasicFeatures(vector<long long>& features,unordered_map<int,vector<tuple<int,int> > >& blobs);
     void addRelativeFeaturesIndices(vector<long long>& features);
     void addTimeDimensionalOffsets(vector<long long>& features);
     void addThreePointOffsetsIndices(vector<long long>& features, tuple<int,int>& offset, tuple<int,int>& p1, long long& bproIndex);

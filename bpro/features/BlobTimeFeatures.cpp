@@ -18,7 +18,9 @@
 #include <algorithm>
 #include <math.h>
 #include <unordered_set>
+
 using namespace std;
+using google::dense_hash_map;
 
 
 BlobTimeFeatures::BlobTimeFeatures(Parameters *param){
@@ -55,7 +57,7 @@ BlobTimeFeatures::BlobTimeFeatures(Parameters *param){
         baseBasic.push_back(baseBasic.back()+numColors*get<0>(numBlocks[index])*get<1>(numBlocks[index]));
         baseBpro.push_back(baseBpro.back()+get<0>(numOffsets[index]) * get<1>(numOffsets[index])* (1+numColors) * numColors/2);
         baseTime.push_back(baseTime.back()+ get<0>(numOffsets[index]) * get<1>(numOffsets[index]) * numColors * numColors);
-        //baseThreePoint.push_back(baseThreePoint.back()+get<0>(numOffsets[index]) * get<1>(numOffsets[index])* (1+numColors) * numColors/2 * numColors* get<0>(numOffsets[index])*get<1>(numOffsets[index]));
+        baseThreePoint.push_back(baseThreePoint.back()+get<0>(numOffsets[index]) * get<1>(numOffsets[index])* (1+numColors) * numColors/2 * numColors* get<0>(numOffsets[index])*get<1>(numOffsets[index]));
     }
     
     //set up table to prevent repetitive features
@@ -69,8 +71,9 @@ BlobTimeFeatures::BlobTimeFeatures(Parameters *param){
                 bproExistence[index][i][j]=true;
             }
         }
-        //threePointChanged.push_back(vector<long long>());
-        //threePointExistence.push_back(unordered_map<long long,int>());
+        threePointExistence.push_back(dense_hash_map<long long,int>());
+        threePointExistence.back().set_empty_key(numThreePointOffsets+1);
+        threePointExistence.back().resize(100000);
     }
     
     neighborSize = 3;
@@ -231,20 +234,19 @@ void BlobTimeFeatures::addRelativeFeaturesIndices(vector<long long>& features){
                             changed[index].push_back(pos);
                             bproExistence[index][rowDelta][columnDelta]=false;
                             features.push_back(baseBpro[index]+bproIndex);
-                            
                         }
                         
                         //add three point feature
-                        /*if (previousBlobs.size()>0){
+                        if (previousBlobs.size()>0){
                             addThreePointOffsetsIndices(features,pos,*k,bproIndex);
-                        }*/
+                        }
 
                     }
                     
                 }
             }
             resetBproExistence();
-            //resetThreePointExistence();
+            resetThreePointExistence();
         }
         for (int c2=c1+1;c2<numColors;++c2){
             if (blobs[c1].size()>0 && blobs[c2].size()>0){
@@ -263,16 +265,16 @@ void BlobTimeFeatures::addRelativeFeaturesIndices(vector<long long>& features){
                             }
                             
                             //add three point feature
-                            /*if (previousBlobs.size()>0){
+                            if (previousBlobs.size()>0){
                                 addThreePointOffsetsIndices(features,pos,*it1,bproIndex);
-                            }*/
+                            }
 
                             
                         }
                     }
                 }
                 resetBproExistence();
-                //resetThreePointExistence();
+                resetThreePointExistence();
             }
         }
     }
@@ -331,7 +333,6 @@ void BlobTimeFeatures::addThreePointOffsetsIndices(vector<long long>& features, 
                     int columnDelta = get<1>(p1)-get<1>(*it)+get<0>(numBlocks[index])-1;
                     long long threePointIndex = bproIndex*numColors*get<0>(numOffsets[index])*get<1>(numOffsets[index])+c3*get<0>(numOffsets[index])*get<1>(numOffsets[index])+rowDelta*get<1>(numOffsets[index])+columnDelta;
                     if (threePointExistence[index][threePointIndex]==0){
-                        threePointChanged[index].push_back(threePointIndex);
                         threePointExistence[index][threePointIndex]=1;
                         features.push_back(baseThreePoint[index]+threePointIndex);
                     }
@@ -355,13 +356,13 @@ void BlobTimeFeatures::getActiveFeaturesIndices(const ALEScreen &screen, const A
     if (previousBlobs.size()>0){
         addTimeDimensionalOffsets(features);
     }
-    features.push_back(numBasicFeatures+numRelativeFeatures + numTimeDimensionalOffsets);
+    features.push_back(numBasicFeatures+numRelativeFeatures + numTimeDimensionalOffsets+numThreePointOffsets);
     previousBlobs = blobs;
 }
 
 
 long long BlobTimeFeatures::getNumberOfFeatures(){
-    return numBasicFeatures+numRelativeFeatures + numTimeDimensionalOffsets+1;
+    return numBasicFeatures+numRelativeFeatures + numTimeDimensionalOffsets+numThreePointOffsets+1;
 }
 
 void BlobTimeFeatures::resetBproExistence(){
@@ -375,10 +376,7 @@ void BlobTimeFeatures::resetBproExistence(){
 
 void BlobTimeFeatures::resetThreePointExistence(){
     for (int index = 0; index<numResolutions;++index){
-        for (auto it=threePointChanged[index].begin();it!=threePointChanged[index].end();it++){
-            threePointExistence[index].erase(*it);
-        }
-        threePointChanged[index].clear();
+        threePointExistence[index].clear();
     }
 }
 

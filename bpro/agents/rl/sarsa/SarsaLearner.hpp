@@ -14,8 +14,14 @@
 #include "../RLLearner.hpp"
 #endif
 #include <vector>
-#include <unordered_map>
+#include <sparsehash/dense_hash_map>
 using namespace std;
+using google::dense_hash_map;
+
+struct Group{
+    long long numFeatures;
+    vector<long long> features;
+};
 
 class SarsaLearner : public RLLearner{
 	private:
@@ -33,7 +39,7 @@ class SarsaLearner : public RLLearner{
         long long maxFeatVectorNorm;
         int saveThreshold;
     
-        long long numFeaturesSeen;
+        long long numGroups;
 
 		vector<long long> F;					//Set of features active
 		vector<long long> Fnext;              //Set of features active in next state
@@ -43,7 +49,8 @@ class SarsaLearner : public RLLearner{
         vector<vector<float> > w;     //Theta, weights vector
 		vector<vector<long long> >nonZeroElig;//To optimize the implementation
         //vector<vector<long long> > featureSeen;
-        unordered_map<long long,int> featureTranslate;
+        dense_hash_map<long long,long long> featureTranslate;
+        vector<Group> groups;
     
 
 		/**
@@ -85,7 +92,7 @@ class SarsaLearner : public RLLearner{
         void loadWeights();
         void saveCheckPoint(int episode, int totalNumberFrames,  vector<float>& episodeResults, int& frequency, vector<int>& episodeFrames, vector<double>& episodeFps);
         void loadCheckPoint(ifstream& checkPointToLoad);
-        void translateFeatures(vector<long long>& activeFeatures);
+        void groupFeatures(vector<long long>& activeFeatures);
     public:
 		SarsaLearner(ALEInterface& ale, Features *features, Parameters *param,int seed);
 		/**
