@@ -183,6 +183,7 @@ void SarsaLearner::saveCheckPoint(int episode, int totalNumberFrames, vector<flo
     checkPointFile << firstReward<<endl;
     checkPointFile << maxFeatVectorNorm<<endl;
     checkPointFile << numGroups<<endl;
+    checkPointFile << featureTranslate.size()<<endl;
     vector<int> nonZeroWeights;
     for (unsigned long long groupIndex=0; groupIndex<numGroups;++groupIndex){
         nonZeroWeights.clear();
@@ -225,6 +226,8 @@ void SarsaLearner::loadCheckPoint(ifstream& checkPointToLoad){
     checkPointToLoad >> maxFeatVectorNorm;
     learningRate = alpha / float(maxFeatVectorNorm);
     checkPointToLoad >> numGroups;
+    long long numberOfFeaturesSeen;
+    checkPointToLoad >> numberOfFeaturesSeen;
     for (unsigned long long index=0;index<numGroups;++index){
         Group agroup;
         agroup.numFeatures = 0;
