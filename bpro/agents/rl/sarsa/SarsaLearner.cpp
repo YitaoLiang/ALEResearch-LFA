@@ -300,7 +300,7 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
         int lives = ale.lives();
         //Repeat(for each step of episode) until game is over:
 		//This also stops when the maximum number of steps per episode is reached
-		while(!ale.game_over() && lives == ale.lives()){
+		while(!ale.game_over()){
 			reward.clear();
 			reward.push_back(0.0);
 			reward.push_back(0.0);
@@ -310,7 +310,7 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
 			//Take action, observe reward and next state:
 			act(ale, currentAction, reward);
 			cumReward  += reward[1];
-			if(!ale.game_over() && lives==ale.lives()){
+			if(!ale.game_over()){
 				//Obtain active features in the new state:
 				Fnext.clear();
 				features->getActiveFeaturesIndices(ale.getScreen(), ale.getRAM(), Fnext);
