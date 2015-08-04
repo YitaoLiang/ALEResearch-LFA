@@ -76,7 +76,7 @@ BlobTimeFeatures::BlobTimeFeatures(Parameters *param){
         //threePointExistence.back().resize(100000);
     }
     
-    neighborSize = 3;
+    neighborSize = param->getNeighborSize();
     fullNeighbors = new vector<tuple<int,int> >();
     for (int xDelta=-neighborSize;xDelta<0;++xDelta){
         for (int yDelta=-neighborSize;yDelta<=neighborSize;++yDelta){
