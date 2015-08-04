@@ -65,7 +65,7 @@ class BlobTimeFeatures : public Features::Features{
     void getBasicFeatures(vector<long long>& features,unordered_map<int,vector<tuple<int,int> > >& blobs);
     void addRelativeFeaturesIndices(vector<long long>& features);
     void addTimeDimensionalOffsets(vector<long long>& features);
-    void addThreePointOffsetsIndices(vector<long long>& features, tuple<int,int>& offset, tuple<int,int>& p1, long long& bproIndex);
+    void addThreePointOffsetsIndices(vector<long long>& features, tuple<int,int>& offset, tuple<int,int>& p1, long long& bproIndex,int color);
     void resetBproExistence();
     void resetThreePointExistence();
     void updateRepresentatiePixel(int& x, int& y, Disjoint_Set_Element* root, Disjoint_Set_Element* other);

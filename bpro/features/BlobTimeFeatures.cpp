@@ -25,8 +25,6 @@ using namespace std;
 
 BlobTimeFeatures::BlobTimeFeatures(Parameters *param){
     this->param = param;
-    //numColumns  = param->getNumColumns();
-    //numRows     = param->getNumRows();
     numColors   = param->getNumColors();
     colorMultiplier =(int) log2(256 / numColors);
     
@@ -38,15 +36,15 @@ BlobTimeFeatures::BlobTimeFeatures(Parameters *param){
     numResolutions = param->getResolutions();
     numBasicFeatures = 0;
     numRelativeFeatures = 0;
-    //numThreePointOffsets = 0;
+    numThreePointOffsets = 0;
     resolutions.push_back(make_tuple(15,10)); resolutions.push_back(make_tuple(3,2)); resolutions.push_back(make_tuple(7,4));
     for (int index=0;index<numResolutions;index++){
         numBlocks.push_back(make_tuple(210/get<0>(resolutions[index]),160/get<1>(resolutions[index])));
         numOffsets.push_back(make_tuple(2 * get<0>(numBlocks[index])-1, 2*get<1>(numBlocks[index])-1));
         numBasicFeatures+= numColors*get<0>(numBlocks[index])*get<1>(numBlocks[index]);
         numRelativeFeatures+= get<0>(numOffsets[index]) * get<1>(numOffsets[index])* (1+numColors) * numColors/2;
-        numTimeDimensionalOffsets+= get<0>(numOffsets[index]) * get<1>(numOffsets[index]) * numColors * numColors;
-        //numThreePointOffsets+= get<0>(numOffsets[index]) * get<1>(numOffsets[index])* (1+numColors) * numColors/2 * numColors * get<0>(numOffsets[index])*get<1>(numOffsets[index]);
+        numTimeDimensionalOffsets+= get<0>(numOffsets[index]) * get<1>(numOffsets[index]) * numColors;
+        //numThreePointOffsets+= get<0>(numOffsets[index]) * get<1>(numOffsets[index])* (1+numColors) * numColors/2 * get<0>(numOffsets[index])*get<1>(numOffsets[index]);
     }
     //get different base for calculation
     baseBasic.push_back(0);
@@ -56,8 +54,8 @@ BlobTimeFeatures::BlobTimeFeatures(Parameters *param){
     for (int index=0;index<numResolutions-1;++index){
         baseBasic.push_back(baseBasic.back()+numColors*get<0>(numBlocks[index])*get<1>(numBlocks[index]));
         baseBpro.push_back(baseBpro.back()+get<0>(numOffsets[index]) * get<1>(numOffsets[index])* (1+numColors) * numColors/2);
-        baseTime.push_back(baseTime.back()+ get<0>(numOffsets[index]) * get<1>(numOffsets[index]) * numColors * numColors);
-        //baseThreePoint.push_back(baseThreePoint.back()+get<0>(numOffsets[index]) * get<1>(numOffsets[index])* (1+numColors) * numColors/2 * numColors* get<0>(numOffsets[index])*get<1>(numOffsets[index]));
+        baseTime.push_back(baseTime.back()+ get<0>(numOffsets[index]) * get<1>(numOffsets[index]) * numColors);
+        //baseThreePoint.push_back(baseThreePoint.back()+get<0>(numOffsets[index]) * get<1>(numOffsets[index])* (1+numColors) * numColors/2 * get<0>(numOffsets[index])*get<1>(numOffsets[index]));
     }
     
     //set up table to prevent repetitive features
@@ -71,7 +69,7 @@ BlobTimeFeatures::BlobTimeFeatures(Parameters *param){
                 bproExistence[index][i][j]=true;
             }
         }
-        //threePointExistence.push_back(dense_hash_map<long long,int>());
+        //threePointExistence.push_back(unordered_map<long long,int>());
         //threePointExistence.back().set_empty_key(numThreePointOffsets+1);
         //threePointExistence.back().resize(100000);
     }
@@ -238,7 +236,7 @@ void BlobTimeFeatures::addRelativeFeaturesIndices(vector<long long>& features){
                         
                         //add three point feature
                         /*if (previousBlobs.size()>0){
-                            addThreePointOffsetsIndices(features,pos,*k,bproIndex);
+                            addThreePointOffsetsIndices(features,pos,*k,bproIndex,c1);
                         }*/
 
                     }
@@ -266,7 +264,7 @@ void BlobTimeFeatures::addRelativeFeaturesIndices(vector<long long>& features){
                             
                             //add three point feature
                             /*if (previousBlobs.size()>0){
-                                addThreePointOffsetsIndices(features,pos,*it1,bproIndex);
+                                addThreePointOffsetsIndices(features,pos,*it1,bproIndex,c1);
                             }*/
 
                             
@@ -299,11 +297,10 @@ void BlobTimeFeatures::getBasicFeatures(vector<long long>& features,  unordered_
 }
 
 void BlobTimeFeatures::addTimeDimensionalOffsets(vector<long long>& features){
-    for (int c1=0;c1<numColors;++c1){
-        for (int c2=0;c2<numColors;++c2){
-            if (previousBlobs[c1].size()>0 && blobs[c2].size()>0){
-                for (auto it1=previousBlobs[c1].begin();it1 !=previousBlobs[c1].end();++it1){
-                    for (auto it2=blobs[c2].begin();it2 != blobs[c2].end();++it2){
+    for (int c=0;c<numColors;++c){
+            if (previousBlobs[c].size()>0 && blobs[c].size()>0){
+                for (auto it1=previousBlobs[c].begin();it1 !=previousBlobs[c].end();++it1){
+                    for (auto it2=blobs[c].begin();it2 != blobs[c].end();++it2){
                         
                         for (int index=0;index<numResolutions;++index){
                             int rowDelta =get<0>(*it1)/get<0>(resolutions[index])-get<0>(*it2)/get<0>(resolutions[index])+get<0>(numBlocks[index])-1;
@@ -312,30 +309,28 @@ void BlobTimeFeatures::addTimeDimensionalOffsets(vector<long long>& features){
                                 tuple<int,int> pos(rowDelta,columnDelta);
                                 changed[index].push_back(pos);
                                 bproExistence[index][rowDelta][columnDelta]=false;
-                                features.push_back(baseTime[index]+c1*numColors*get<0>(numOffsets[index])*get<1>(numOffsets[index])+c2*get<0>(numOffsets[index])*get<1>(numOffsets[index])+rowDelta*get<1>(numOffsets[index])+columnDelta);
+                                features.push_back(baseTime[index]+c*get<0>(numOffsets[index])*get<1>(numOffsets[index])+rowDelta*get<1>(numOffsets[index])+columnDelta);
                             }
                         }
                     }
                 }
                 resetBproExistence();
             }
-        }
     }
     
 }
 
-void BlobTimeFeatures::addThreePointOffsetsIndices(vector<long long>& features, tuple<int,int>& offset, tuple<int,int>& p1, long long& bproIndex){
-    for (int c3=0;c3<numColors;c3++){
-        if (previousBlobs[c3].size()>0){
-            for (vector<tuple<int,int> >::iterator it = previousBlobs[c3].begin();it!=previousBlobs[c3].end();it++){
-                for (int index=0;index<numResolutions;++index){
-                    int rowDelta = get<0>(p1)-get<0>(*it)+get<0>(numBlocks[index])-1;
-                    int columnDelta = get<1>(p1)-get<1>(*it)+get<0>(numBlocks[index])-1;
-                    long long threePointIndex = bproIndex*numColors*get<0>(numOffsets[index])*get<1>(numOffsets[index])+c3*get<0>(numOffsets[index])*get<1>(numOffsets[index])+rowDelta*get<1>(numOffsets[index])+columnDelta;
-                    if (threePointExistence[index][threePointIndex]==0){
-                        threePointExistence[index][threePointIndex]=1;
-                        features.push_back(baseThreePoint[index]+threePointIndex);
-                    }
+void BlobTimeFeatures::addThreePointOffsetsIndices(vector<long long>& features, tuple<int,int>& offset, tuple<int,int>& p1, long long& bproIndex, int color){
+
+    if (previousBlobs[color].size()>0){
+        for (vector<tuple<int,int> >::iterator it = previousBlobs[color].begin();it!=previousBlobs[color].end();it++){
+            for (int index=0;index<numResolutions;++index){
+                int rowDelta = get<0>(p1)-get<0>(*it)+get<0>(numBlocks[index])-1;
+                int columnDelta = get<1>(p1)-get<1>(*it)+get<0>(numBlocks[index])-1;
+                long long threePointIndex = bproIndex*get<0>(numOffsets[index])*get<1>(numOffsets[index])+rowDelta*get<1>(numOffsets[index])+columnDelta;
+                if (threePointExistence[index][threePointIndex]==0){
+                    threePointExistence[index][threePointIndex]=1;
+                    features.push_back(baseThreePoint[index]+threePointIndex);
                 }
             }
         }
