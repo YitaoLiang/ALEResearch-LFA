@@ -50,6 +50,7 @@ SarsaLearner::SarsaLearner(ALEInterface& ale, Features *features, Parameters *pa
     }
     episodePassed = 0;
     featureTranslate.clear();
+    featureTranslate.max_load_factor(0.5);
 	if(toSaveCheckPoint){
         checkPointName = param->getCheckPointName();
         //load CheckPoint
@@ -414,7 +415,8 @@ void SarsaLearner::evaluatePolicy(ALEInterface& ale, Features *features){
 }
 
 void SarsaLearner::groupFeatures(vector<long long>& activeFeatures){
-    long long previousGroupsSize = groups.size();
+    vector<long long> activeGroupIndices;
+    
     int newGroup = 0;
     for (unsigned long long i = 0; i <activeFeatures.size();++i){
         long long featureIndex = activeFeatures[i];
@@ -436,9 +438,13 @@ void SarsaLearner::groupFeatures(vector<long long>& activeFeatures){
                 featureTranslate[featureIndex] = numGroups;
             }
         }else{
-            groups[featureTranslate[featureIndex]-1].features.push_back(featureIndex);
+            long long groupIndex = featureTranslate[featureIndex]-1;
+            auto it = &groups[groupIndex].features;
+            if (it->size() == 0){
+                activeGroupIndices.push_back(groupIndex);
+            }
+            it->push_back(featureIndex);
         }
-        
     }
     
     activeFeatures.clear();
@@ -446,26 +452,27 @@ void SarsaLearner::groupFeatures(vector<long long>& activeFeatures){
         activeFeatures.push_back(groups.size()-1);
     }
     
-    for (unsigned long long index=0;index<previousGroupsSize;++index){
-        if (groups[index].features.size()!=0 && groups[index].features.size()!=groups[index].numFeatures){
+    for (unsigned long long index=0;index<activeGroupIndices.size();++index){
+        long long groupIndex = activeGroupIndices[index];
+        if (groups[groupIndex].features.size()!=groups[groupIndex].numFeatures && groups[groupIndex].features.size()!=0){
             Group agroup;
-            agroup.numFeatures = groups[index].features.size();
+            agroup.numFeatures = groups[groupIndex].features.size();
             agroup.features.clear();
             groups.push_back(agroup);
-             ++numGroups;
-            for (unsigned long long i =0; i<groups[index].features.size();++i){
-                featureTranslate[groups[index].features[i]] = numGroups;
+            ++numGroups;
+            for (unsigned long long i =0; i<groups[groupIndex].features.size();++i){
+                featureTranslate[groups[groupIndex].features[i]] = numGroups;
             }
             activeFeatures.push_back(numGroups-1);
             for (unsigned a = 0;a<w.size();++a){
-                w[a].push_back(w[a][index]);
+                w[a].push_back(w[a][groupIndex]);
                 e[a].push_back(0.00);
             }
-            groups[index].numFeatures = groups[index].numFeatures - groups[index].features.size();
-        }else if(groups[index].features.size()==groups[index].numFeatures){
-            activeFeatures.push_back(index);
+            groups[groupIndex].numFeatures = groups[groupIndex].numFeatures - groups[groupIndex].features.size();
+        }else if(groups[groupIndex].features.size()==groups[groupIndex].numFeatures){
+            activeFeatures.push_back(groupIndex);
         }
-        groups[index].features.clear();
+        groups[groupIndex].features.clear();
     }
 }
 
