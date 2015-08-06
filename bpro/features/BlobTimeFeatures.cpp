@@ -232,7 +232,7 @@ void BlobTimeFeatures::addRelativeFeaturesIndices(vector<long long>& features){
                 
                 for (int index=0;index<numResolutions;++index){
                     int rowDelta = (get<0>(*k)/get<0>(resolutions[index])-get<0>(*h))/get<0>(resolutions[index]);
-                    int columnDelta = get<1>(*k)/get<1>(resolutions[index])-get<1>(*k)/get<1>(resolutions[index]);
+                    int columnDelta = get<1>(*k)/get<1>(resolutions[index])-get<1>(*h)/get<1>(resolutions[index]);
                     bool newBproFeature = false;
                     if (rowDelta>0){
                         newBproFeature = true;
