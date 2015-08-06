@@ -343,8 +343,8 @@ void BlobTimeFeatures::addThreePointOffsetsIndices(vector<long long>& features, 
         int c3 = previousBlobActiveColors[index3];
         for (vector<tuple<int,int> >::iterator it = previousBlobs[c3].begin();it!=previousBlobs[c3].end();it++){
            
-                int rowDelta = get<0>(p1)-get<0>(*it)+get<0>(numBlocks[index])-1;
-                int columnDelta = get<1>(p1)-get<1>(*it)+get<0>(numBlocks[index])-1;
+                int rowDelta = get<0>(p1)/get<0>(resolutions[index])-get<0>(*it)/get<0>(resolutions[index])+get<0>(numBlocks[index])-1;
+                int columnDelta = get<1>(p1)/get<1>(resolutions[index])-get<1>(*it)/get<1>(resolutions[index])+get<0>(numBlocks[index])-1;
                 long long threePointIndex = bproIndex*numColors*get<0>(numOffsets[index])*get<1>(numOffsets[index])+c3*get<0>(numOffsets[index])*get<1>(numOffsets[index])+rowDelta*get<1>(numOffsets[index])+columnDelta;
                 if (threePointExistence[index][threePointIndex]==0){
                     threePointExistence[index][threePointIndex]=1;
@@ -369,7 +369,9 @@ void BlobTimeFeatures::getActiveFeaturesIndices(const ALEScreen &screen, const A
     }
     cout<<numBlobsForPrint<<endl;*/
     getBasicFeatures(features);
+    cout<<"1: "<<features.size()<<endl;
     addRelativeFeaturesIndices(features);
+    cout<<"2: "<<features.size()<<endl;
     if (previousBlobs.size()>0){
         addTimeDimensionalOffsets(features);
     }
