@@ -5,7 +5,7 @@
 ** REMARKS: - This implementation is basically Erik Talvitie's implementation, presented
 **            in the AAAI'15 LGCVG Workshop.
 **
-** Author: Marlos C. Machado
+** Author: Yitao Liang
 ***************************************************************************************/
 
 #ifndef FEATURES_H
@@ -56,8 +56,10 @@ class BlobTimeFeatures : public Features::Features{
     
         vector<vector<vector<bool> > > bproExistence;
         vector<vector<tuple<int,int> > > changed;
+        vector<vector<vector<bool> > > threePointExistence;
+        vector<vector<tuple<int,int> > > threePointChanged;
     
-        vector<unordered_map<long long,int> > threePointExistence;
+        vector<vector<vector<vector<tuple<int,int,long long> > > > > pairwiseOffsets;
     
         vector<long long> baseBpro, baseTime, baseBasic, baseThreePoint;
     
@@ -67,7 +69,7 @@ class BlobTimeFeatures : public Features::Features{
     void getBasicFeatures(vector<long long>& features);
     void addRelativeFeaturesIndices(vector<long long>& features);
     void addTimeDimensionalOffsets(vector<long long>& features);
-    void addThreePointOffsetsIndices(vector<long long>& features, tuple<int,int>& offset, tuple<int,int>& p1, long long& bproIndex);
+    void addThreePointOffsetsIndices(vector<long long>& features);
     void resetBproExistence();
     void resetThreePointExistence();
     void updateRepresentatiePixel(int& x, int& y, Disjoint_Set_Element* root, Disjoint_Set_Element* other);
