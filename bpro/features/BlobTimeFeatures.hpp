@@ -59,7 +59,7 @@ class BlobTimeFeatures : public Features::Features{
         vector<vector<vector<bool> > > threePointExistence;
         vector<vector<tuple<int,int> > > threePointChanged;
     
-        vector<vector<vector<vector<tuple<int,int,long long> > > > > pairwiseOffsets;
+        vector<unordered_map<long long,vector<tuple<int,int> > > >pairwiseOffsets;
     
         vector<long long> baseBpro, baseTime, baseBasic, baseThreePoint;
     
@@ -70,8 +70,8 @@ class BlobTimeFeatures : public Features::Features{
     void addRelativeFeaturesIndices(vector<long long>& features);
     void addTimeDimensionalOffsets(vector<long long>& features);
     void addThreePointOffsetsIndices(vector<long long>& features);
-    void resetBproExistence();
-    void resetThreePointExistence();
+    void resetExistence(vector<vector<vector<bool> > >& existence, vector<vector<tuple<int,int> > >& modified);
+    void resetPairwiseOffsets();
     void updateRepresentatiePixel(int& x, int& y, Disjoint_Set_Element* root, Disjoint_Set_Element* other);
     int getPowerTwoOffset(int rawDelta);
     

@@ -46,7 +46,7 @@ BlobTimeFeatures::BlobTimeFeatures(Parameters *param){
         numBasicFeatures+= numColors*get<0>(numBlocks[index])*get<1>(numBlocks[index]);
         numRelativeFeatures+= get<0>(numOffsets[index]) * get<1>(numOffsets[index])* (1+numColors) * numColors/2;
         numTimeDimensionalOffsets+= get<0>(numOffsets[index]) * get<1>(numOffsets[index]) * numColors * numColors;
-        //numThreePointOffsets+= get<0>(numOffsets[index]) * get<1>(numOffsets[index])* (1+numColors) * numColors/2 * numColors * get<0>(numOffsets[index])*get<1>(numOffsets[index]);
+        numThreePointOffsets+= get<0>(numOffsets[index]) * get<1>(numOffsets[index])* (1+numColors) * numColors/2 * numColors * get<0>(numOffsets[index])*get<1>(numOffsets[index]);
     }
     
     //get different base for calculation
@@ -58,7 +58,7 @@ BlobTimeFeatures::BlobTimeFeatures(Parameters *param){
         baseBasic.push_back(baseBasic.back()+numColors*get<0>(numBlocks[index])*get<1>(numBlocks[index]));
         baseBpro.push_back(baseBpro.back()+get<0>(numOffsets[index]) * get<1>(numOffsets[index])* (1+numColors) * numColors/2);
         baseTime.push_back(baseTime.back()+ get<0>(numOffsets[index]) * get<1>(numOffsets[index]) * numColors * numColors);
-        //baseThreePoint.push_back(baseThreePoint.back()+get<0>(numOffsets[index]) * get<1>(numOffsets[index])* (1+numColors) * numColors/2 * numColors* get<0>(numOffsets[index])*get<1>(numOffsets[index]));
+        baseThreePoint.push_back(baseThreePoint.back()+get<0>(numOffsets[index]) * get<1>(numOffsets[index])* (1+numColors) * numColors/2 * numColors* get<0>(numOffsets[index])*get<1>(numOffsets[index]));
     }
     
     //set up table to prevent repetitive features
@@ -68,12 +68,10 @@ BlobTimeFeatures::BlobTimeFeatures(Parameters *param){
     for (int index=0;index<numResolutions;++index){
         bproExistence[index].resize(get<0>(numOffsets[index]));
         threePointExistence[index].resize(get<0>(numOffsets[index]));
-        pairwiseOffsets[index].resize(get<0>(numOffsets[index]));
         
         for (int i=0;i<get<0>(numOffsets[index]);++i){
             bproExistence[index][i].resize(get<1>(numOffsets[index]));
             threePointExistence[index][i].resize(get<1>(numOffsets[index]));
-            pairwiseOffsets[index][i].resize(get<1>(numOffsets[index]));
 
             for (int j=0;j<get<1>(numOffsets[index]);++j){
                 bproExistence[index][i][j]=true;
@@ -257,16 +255,18 @@ void BlobTimeFeatures::addRelativeFeaturesIndices(vector<long long>& features){
                         features.push_back(baseBpro[index]+bproIndex);
                     }
                     
-                    //pairwiseOffsets[index][rowDelta][columnDelta].push_back(make_tuple(coarsedX,coarsedY,bproIndex));
+                    pairwiseOffsets[index][bproIndex].push_back(make_tuple(coarsedX,coarsedY));
                 }
                 
             }
         }
         //add three point feature
-        /*if (previousBlobs.size()>0){
+        if (previousBlobs.size()>0){
             addThreePointOffsetsIndices(features);
-        }*/
-        resetBproExistence();
+        }
+        resetExistence(bproExistence,changed);
+        resetPairwiseOffsets();
+        
         
         for (int index2=index1+1;index2<blobActiveColors.size();++index2){
             int c2 = blobActiveColors[index2];
@@ -286,16 +286,17 @@ void BlobTimeFeatures::addRelativeFeaturesIndices(vector<long long>& features){
                             features.push_back(baseBpro[index]+bproIndex);
                         }
                         
-                         //pairwiseOffsets[index][rowDelta][columnDelta].push_back(make_tuple(coarsedX,coarsedY,bproIndex));
+                         pairwiseOffsets[index][bproIndex].push_back(make_tuple(coarsedX,coarsedY));
                         
                     }
                 }
             }
             //add three point feature
-            /*if (previousBlobs.size()>0){
+            if (previousBlobs.size()>0){
                 addThreePointOffsetsIndices(features);
-            }*/
-            resetBproExistence();
+            }
+            resetExistence(bproExistence,changed);
+            resetPairwiseOffsets();
 
         }
     }
@@ -340,7 +341,7 @@ void BlobTimeFeatures::addTimeDimensionalOffsets(vector<long long>& features){
                     }
                 }
             }
-            resetBproExistence();
+            resetExistence(bproExistence,changed);
             
         }
     }
@@ -348,14 +349,15 @@ void BlobTimeFeatures::addTimeDimensionalOffsets(vector<long long>& features){
 
 void BlobTimeFeatures::addThreePointOffsetsIndices(vector<long long>& features){
     for (int indexForResolution =0;indexForResolution<numResolutions;++indexForResolution){
-        for (auto it=changed[indexForResolution].begin();it!=changed[indexForResolution].end();++it){
-            for (auto itt=pairwiseOffsets[indexForResolution][get<0>(*it)][get<1>(*it)].begin();itt!=pairwiseOffsets[indexForResolution][get<0>(*it)][get<1>(*it)].end();++itt){
-                long long bproIndex = get<2>(*itt);
-                for (int indexForColor=0;indexForColor<previousBlobActiveColors.size();++indexForColor){
-                    int c3 = previousBlobActiveColors[indexForColor];
+        for (auto itt=pairwiseOffsets[indexForResolution].begin();itt!=pairwiseOffsets[indexForResolution].end();++itt){
+            long long bproIndex = itt->first;
+            vector<tuple<int,int> > * positions = &itt->second;
+            for (int indexForColor=0;indexForColor<previousBlobActiveColors.size();++indexForColor){
+                int c3 = previousBlobActiveColors[indexForColor];
+                for (auto p= positions->begin();p!=positions->end();++p){
                     for (auto it2 = previousBlobs[c3].begin();it2!=previousBlobs[c3].end();++it2){
-                        int rowDelta = get<0>(*itt) - get<0>(*it2)/get<0>(resolutions[indexForResolution])+get<0>(numBlocks[indexForResolution])-1;
-                        int columnDelta = get<1>(*itt) - get<1>(*it2)/get<1>(resolutions[indexForResolution])+get<1>(numBlocks[indexForResolution])-1;
+                        int rowDelta = get<0>(*p) - get<0>(*it2)/get<0>(resolutions[indexForResolution])+get<0>(numBlocks[indexForResolution])-1;
+                        int columnDelta = get<1>(*p) - get<1>(*it2)/get<1>(resolutions[indexForResolution])+get<1>(numBlocks[indexForResolution])-1;
                         if (threePointExistence[indexForResolution][rowDelta][columnDelta]){
                             threePointExistence[indexForResolution][rowDelta][columnDelta]=false;
                             tuple<int,int> pos(rowDelta,columnDelta);
@@ -363,8 +365,8 @@ void BlobTimeFeatures::addThreePointOffsetsIndices(vector<long long>& features){
                             features.push_back(baseThreePoint[indexForResolution]+bproIndex*numColors*get<0>(numOffsets[indexForResolution])*get<1>(numOffsets[indexForResolution])+c3*get<0>(numOffsets[indexForResolution])*get<1>(numOffsets[indexForResolution])+rowDelta*get<1>(numOffsets[indexForResolution])+columnDelta);
                         }
                     }
-                    resetThreePointExistence();
                 }
+                resetExistence(threePointExistence,threePointChanged);
             }
         }
     }
@@ -384,14 +386,11 @@ void BlobTimeFeatures::getActiveFeaturesIndices(const ALEScreen &screen, const A
     }
     cout<<numBlobsForPrint<<endl;*/
     getBasicFeatures(features);
-    //cout<<"1: "<<features.size()<<endl;
     addRelativeFeaturesIndices(features);
-    //cout<<"2: "<<features.size()<<endl;
     if (previousBlobs.size()>0){
         addTimeDimensionalOffsets(features);
     }
     features.push_back(numBasicFeatures+numRelativeFeatures + numTimeDimensionalOffsets+numThreePointOffsets);
-    //cout<<"3: "<<features.size()<<endl;
     previousBlobs = blobs;
     previousBlobActiveColors = blobActiveColors;
 }
@@ -401,22 +400,19 @@ long long BlobTimeFeatures::getNumberOfFeatures(){
     return numBasicFeatures+numRelativeFeatures + numTimeDimensionalOffsets+numThreePointOffsets+1;
 }
 
-void BlobTimeFeatures::resetBproExistence(){
+
+void BlobTimeFeatures::resetExistence(vector<vector<vector<bool> > >& existence, vector<vector<tuple<int,int> > >& modified){
     for (int index = 0; index<numResolutions;++index){
-        for (vector<tuple<int,int> >::iterator it = changed[index].begin();it!=changed[index].end();++it){
-            bproExistence[index][get<0>(*it)][get<1>(*it)]=true;
-            //pairwiseOffsets[index][get<0>(*it)][get<1>(*it)].clear();
+        for (vector<tuple<int,int> >::iterator it = modified[index].begin();it!=modified[index].end();++it){
+            existence[index][get<0>(*it)][get<1>(*it)]=true;
         }
-        changed[index].clear();
+        modified[index].clear();
     }
 }
 
-void BlobTimeFeatures::resetThreePointExistence(){
-    for (int index = 0; index<numResolutions;++index){
-        for (vector<tuple<int,int> >::iterator it = threePointChanged[index].begin();it!=threePointChanged[index].end();++it){
-            threePointExistence[index][get<0>(*it)][get<1>(*it)]=true;
-        }
-        threePointChanged[index].clear();
+void BlobTimeFeatures::resetPairwiseOffsets(){
+    for (int index=0;index<numResolutions;++index){
+        pairwiseOffsets[index].clear();
     }
 }
 
