@@ -25,8 +25,6 @@ using namespace std;
 
 BlobTimeFeatures::BlobTimeFeatures(Parameters *param){
     this->param = param;
-    //numColumns  = param->getNumColumns();
-    //numRows     = param->getNumRows();
     numColors   = param->getNumColors();
     colorMultiplier =(int) log2(256 / numColors);
     
@@ -46,7 +44,7 @@ BlobTimeFeatures::BlobTimeFeatures(Parameters *param){
         numBasicFeatures+= numColors*get<0>(numBlocks[index])*get<1>(numBlocks[index]);
         numRelativeFeatures+= get<0>(numOffsets[index]) * get<1>(numOffsets[index])* (1+numColors) * numColors/2;
         numTimeDimensionalOffsets+= get<0>(numOffsets[index]) * get<1>(numOffsets[index]) * numColors * numColors;
-        //numThreePointOffsets+= get<0>(numOffsets[index]) * get<1>(numOffsets[index])* (1+numColors) * numColors/2 * numColors * get<0>(numOffsets[index])*get<1>(numOffsets[index]);
+        numThreePointOffsets+= get<0>(numOffsets[index]) * get<1>(numOffsets[index])* (1+numColors) * numColors/2 * numColors * get<0>(numOffsets[index])*get<1>(numOffsets[index]);
     }
     //get different base for calculation
     baseBasic.push_back(0);
@@ -57,7 +55,7 @@ BlobTimeFeatures::BlobTimeFeatures(Parameters *param){
         baseBasic.push_back(baseBasic.back()+numColors*get<0>(numBlocks[index])*get<1>(numBlocks[index]));
         baseBpro.push_back(baseBpro.back()+get<0>(numOffsets[index]) * get<1>(numOffsets[index])* (1+numColors) * numColors/2);
         baseTime.push_back(baseTime.back()+ get<0>(numOffsets[index]) * get<1>(numOffsets[index]) * numColors * numColors);
-        //baseThreePoint.push_back(baseThreePoint.back()+get<0>(numOffsets[index]) * get<1>(numOffsets[index])* (1+numColors) * numColors/2 * numColors* get<0>(numOffsets[index])*get<1>(numOffsets[index]));
+        baseThreePoint.push_back(baseThreePoint.back()+get<0>(numOffsets[index]) * get<1>(numOffsets[index])* (1+numColors) * numColors/2 * numColors* get<0>(numOffsets[index])*get<1>(numOffsets[index]));
     }
     
     //set up table to prevent repetitive features
@@ -72,8 +70,6 @@ BlobTimeFeatures::BlobTimeFeatures(Parameters *param){
             }
         }
         threePointExistence.push_back(unordered_map<long long,int>());
-        //threePointExistence.back().set_empty_key(numThreePointOffsets+1);
-        //threePointExistence.back().resize(100000);
     }
     
     neighborSize = param->getNeighborSize();
@@ -259,10 +255,6 @@ void BlobTimeFeatures::addRelativeFeaturesIndices(vector<long long>& features){
             }
         }
         resetBproExistence();
-        /*if (previousBlobs.size()>0){
-            cout<<"1: "<<features.size()<<endl;
-        }*/
-
         resetThreePointExistence();
         
         for (int index2=index1+1;index2<blobActiveColors.size();++index2){
@@ -290,9 +282,6 @@ void BlobTimeFeatures::addRelativeFeaturesIndices(vector<long long>& features){
                     }
                 }
             }
-            /*if (previousBlobs.size()>0){
-                cout<<"2: "<<features.size()<<endl;
-            }*/
             resetBproExistence();
             resetThreePointExistence();
         }
@@ -376,9 +365,7 @@ void BlobTimeFeatures::getActiveFeaturesIndices(const ALEScreen &screen, const A
     }
     cout<<numBlobsForPrint<<endl;*/
     getBasicFeatures(features);
-    //cout<<"1: "<<features.size()<<endl;
     addRelativeFeaturesIndices(features);
-    //cout<<"2: "<<features.size()<<endl;
     if (previousBlobs.size()>0){
         addTimeDimensionalOffsets(features);
     }

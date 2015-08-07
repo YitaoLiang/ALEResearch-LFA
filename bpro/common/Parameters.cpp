@@ -220,6 +220,19 @@ void Parameters::parseParametersFromConfigFile(std::string cfgFileName){
     }else{
         this->setNeighborSize(3);
     }
+    
+    
+    if (parameters.count("DROP_OUT")>0){
+        this->setDropOut(atoi(parameters["DROP_OUT"].c_str()));
+    }else{
+        this->setDropOut(0);
+    }
+    
+    if (parameters.count("FINAL_NUMBER_OF_BLOBS")>0){
+        this->setFinalNumberOfBlobs(atoi(parameters["FINAL_NUMBER_OF_BLOBS"].c_str()));
+    }else{
+        this->setFinalNumberOfBlobs(0);
+    }
 }
 
 void Parameters::setSaveTrajectoryPath(std::string name){
@@ -454,6 +467,13 @@ void Parameters::setNeighborSize(int a){
     this->neighborSize = a;
 }
 
+void Parameters::setDropOut(int a){
+    this->dropOut = a;
+}
+void Parameters::setFinalNumberOfBlobs(int a){
+    this->finalNumberOfBlobs = a;
+}
+
 std::string Parameters::getPathToWeightsFiles(){
 	return this->pathToWeightsFiles;
 }
@@ -500,4 +520,12 @@ int Parameters::getFinalExplorationFrame(){
 
 int Parameters::getNeighborSize(){
     return this->neighborSize;
+}
+
+int Parameters::getDropOut(){
+    return this->dropOut;
+}
+
+int Parameters::getFinalNumberOfBlobs(){
+    return this->finalNumberOfBlobs;
 }

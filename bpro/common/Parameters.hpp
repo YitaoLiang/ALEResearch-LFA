@@ -54,6 +54,8 @@ class Parameters{
         int epsilonDecay;
         int finalExplorationFrame;
         int neighborSize;
+        int dropOut;
+        int finalNumberOfBlobs;
 
 	   /**
  		* Constructor defined as private to force the use of the constructor 
@@ -224,6 +226,8 @@ class Parameters{
         void setEpsilonDecay(int a);
         void setFinalExplorationFrame(int a);
         void setNeighborSize(int a);
+        void setDropOut(int a);
+        void setFinalNumberOfBlobs(int a);
 		
 	public:
 		/**
@@ -363,4 +367,6 @@ class Parameters{
         int getEpsilonDecay();
         int getFinalExplorationFrame();
         int getNeighborSize();
+        int getDropOut();
+        int getFinalNumberOfBlobs();
 };
