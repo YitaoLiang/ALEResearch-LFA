@@ -259,6 +259,10 @@ void BlobTimeFeatures::addRelativeFeaturesIndices(vector<long long>& features){
             }
         }
         resetBproExistence();
+        if (previousBlobs.size()>0){
+            cout<<"1: "<<features.size()<<endl;
+        }
+
         resetThreePointExistence();
         
         for (int index2=index1+1;index2<blobActiveColors.size();++index2){
@@ -285,6 +289,9 @@ void BlobTimeFeatures::addRelativeFeaturesIndices(vector<long long>& features){
                         
                     }
                 }
+            }
+            if (previousBlobs.size()>0){
+                cout<<"2: "<<features.size()<<endl;
             }
             resetBproExistence();
             resetThreePointExistence();
