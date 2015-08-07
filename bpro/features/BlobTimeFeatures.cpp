@@ -369,9 +369,9 @@ void BlobTimeFeatures::getActiveFeaturesIndices(const ALEScreen &screen, const A
     }
     cout<<numBlobsForPrint<<endl;*/
     getBasicFeatures(features);
-    cout<<"1: "<<features.size()<<endl;
+    //cout<<"1: "<<features.size()<<endl;
     addRelativeFeaturesIndices(features);
-    cout<<"2: "<<features.size()<<endl;
+    //cout<<"2: "<<features.size()<<endl;
     if (previousBlobs.size()>0){
         addTimeDimensionalOffsets(features);
     }
