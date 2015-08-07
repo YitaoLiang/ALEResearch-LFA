@@ -14,6 +14,7 @@
 #include <getopt.h>
 #include <string>
 #include <vector>
+#include <random>
 
 class Parameters{
 	private:
@@ -56,6 +57,7 @@ class Parameters{
         int neighborSize;
         int dropOut;
         int finalNumberOfBlobs;
+    std::mt19937 agentRand;
 
 	   /**
  		* Constructor defined as private to force the use of the constructor 
@@ -369,4 +371,5 @@ class Parameters{
         int getNeighborSize();
         int getDropOut();
         int getFinalNumberOfBlobs();
+    std::mt19937* getRNG();
 };

@@ -183,7 +183,7 @@ void SarsaLearner::saveCheckPoint(int episode, int totalNumberFrames, vector<flo
     string currentCheckPointName = checkPointName+"-checkPoint-Frames"+to_string(saveThreshold)+"-writing.txt";
     ofstream checkPointFile;
     checkPointFile.open(currentCheckPointName.c_str());
-    checkPointFile<<agentRand<<endl;
+    checkPointFile<<(*agentRand)<<endl;
     checkPointFile<<totalNumberFrames<<endl;
     checkPointFile << episode<<endl;
     checkPointFile << firstReward<<endl;
@@ -222,7 +222,7 @@ void SarsaLearner::saveCheckPoint(int episode, int totalNumberFrames, vector<flo
 }
 
 void SarsaLearner::loadCheckPoint(ifstream& checkPointToLoad){
-    checkPointToLoad >> agentRand;
+    checkPointToLoad >> (*agentRand);
     checkPointToLoad >> totalNumberFrames;
     while (totalNumberFrames<1000){
         checkPointToLoad >> totalNumberFrames;

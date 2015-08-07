@@ -20,6 +20,7 @@
 #include <tuple>
 #include <set>
 #include <unordered_map>
+#include <random>
 //#include <sparsehash/unordered_map>
 //using google::unordered_map;
 
@@ -64,6 +65,9 @@ class BlobTimeFeatures : public Features::Features{
         vector<long long> baseBpro, baseTime, baseBasic, baseThreePoint;
     
         int neighborSize;
+        int dropOut;
+        int finalNumberOfBlobs;
+        mt19937* agentRand;
     
     void getBlobs(const ALEScreen &screen);
     void getBasicFeatures(vector<long long>& features);

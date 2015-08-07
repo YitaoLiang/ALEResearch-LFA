@@ -529,3 +529,7 @@ int Parameters::getDropOut(){
 int Parameters::getFinalNumberOfBlobs(){
     return this->finalNumberOfBlobs;
 }
+
+std::mt19937* Parameters::getRNG(){
+    return (&this->agentRand);
+}
