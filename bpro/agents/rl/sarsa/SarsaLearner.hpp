@@ -52,7 +52,6 @@ class SarsaLearner : public RLLearner{
         //vector<vector<long long> > featureSeen;
         unordered_map<long long,long long> featureTranslate;
         vector<Group> groups;
-    
 
 		/**
  		* Constructor declared as private to force the user to instantiate SarsaLearner

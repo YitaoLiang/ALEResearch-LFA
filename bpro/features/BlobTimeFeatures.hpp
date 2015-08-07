@@ -60,8 +60,11 @@ class BlobTimeFeatures : public Features::Features{
         vector<unordered_map<long long,int> > threePointExistence;
     
         vector<long long> baseBpro, baseTime, baseBasic, baseThreePoint;
-    
+        
         int neighborSize;
+        int dropOut;
+        int finalNumberOfBlobs;
+        mt19937* agentRand;
     
     void getBlobs(const ALEScreen &screen);
     void getBasicFeatures(vector<long long>& features);

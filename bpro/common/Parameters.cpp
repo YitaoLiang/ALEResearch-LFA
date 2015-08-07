@@ -221,7 +221,6 @@ void Parameters::parseParametersFromConfigFile(std::string cfgFileName){
         this->setNeighborSize(3);
     }
     
-    
     if (parameters.count("DROP_OUT")>0){
         this->setDropOut(atoi(parameters["DROP_OUT"].c_str()));
     }else{
@@ -470,6 +469,7 @@ void Parameters::setNeighborSize(int a){
 void Parameters::setDropOut(int a){
     this->dropOut = a;
 }
+
 void Parameters::setFinalNumberOfBlobs(int a){
     this->finalNumberOfBlobs = a;
 }
@@ -528,4 +528,8 @@ int Parameters::getDropOut(){
 
 int Parameters::getFinalNumberOfBlobs(){
     return this->finalNumberOfBlobs;
+}
+
+std::mt19937* Parameters::getRNG(){
+    return (&this->agentRand);
 }

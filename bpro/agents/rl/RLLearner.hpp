@@ -27,7 +27,7 @@ class RLLearner : public Agent{
 		int    totalNumberOfFramesToLearn;
         int epsilonDecay;
         int finalExplorationFrame;
-        mt19937 agentRand;
+        mt19937* agentRand;
 
 		/**
  		* It acts in the environment and makes the proper operations in the reward signal (normalizing,

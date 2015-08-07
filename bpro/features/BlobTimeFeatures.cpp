@@ -111,6 +111,10 @@ BlobTimeFeatures::BlobTimeFeatures(Parameters *param){
         }
     }
     previousBlobs.clear();
+    
+    dropOut = param->getDropOut();
+    finalNumberOfBlobs = param->getFinalNumberOfBlobs();
+    agentRand = param->getRNG();
 }
 
 BlobTimeFeatures::~BlobTimeFeatures(){
@@ -208,14 +212,33 @@ void BlobTimeFeatures::getBlobs(const ALEScreen &screen){
     }
     
     //get all the blobs
+    bool whetherAdd = false;
+    int numBlobs = 0;
+    for (int color=0;color<numColors;++color){
+        numBlobs+=blobIndices[color].size();
+    }
+    float retentionRate = float(finalNumberOfBlobs)/numBlobs;
+    unsigned int rngMax = agentRand->max();
     for (int color = 0;color<numColors;++color){
         for (auto index=blobIndices[color].begin();index!=blobIndices[color].end();++index){
-            int x = (disjoint_set[*index].rowUp+disjoint_set[*index].rowDown)/2;
-            int y = (disjoint_set[*index].columnLeft+disjoint_set[*index].columnRight)/2;
-            if (blobs[color].size()==0){
-                blobActiveColors.push_back(color);
+            if (!dropOut || finalNumberOfBlobs>=numBlobs){
+                whetherAdd = true;
+            }else{
+                unsigned int possibleNumber = (*agentRand)();
+                if (float(possibleNumber)/rngMax <= retentionRate){
+                    whetherAdd = true;
+                }else{
+                    whetherAdd = false;
+                }
             }
-            blobs[color].push_back(make_tuple(x,y));
+            if (whetherAdd){
+                int x = (disjoint_set[*index].rowUp+disjoint_set[*index].rowDown)/2;
+                int y = (disjoint_set[*index].columnLeft+disjoint_set[*index].columnRight)/2;
+                if (blobs[color].size()==0){
+                    blobActiveColors.push_back(color);
+                }
+                blobs[color].push_back(make_tuple(x,y));
+            }
         }
     }
 }
