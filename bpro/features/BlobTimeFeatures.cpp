@@ -38,6 +38,7 @@ BlobTimeFeatures::BlobTimeFeatures(Parameters *param){
     numResolutions = param->getResolutions();
     numBasicFeatures = 0;
     numRelativeFeatures = 0;
+    numTimeDimensionalOffsets = 0;
     //numThreePointOffsets = 0;
     resolutions.push_back(make_tuple(15,10)); resolutions.push_back(make_tuple(3,2)); resolutions.push_back(make_tuple(7,4));
     for (int index=0;index<numResolutions;index++){
