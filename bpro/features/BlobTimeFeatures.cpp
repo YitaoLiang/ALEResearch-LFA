@@ -38,6 +38,8 @@ BlobTimeFeatures::BlobTimeFeatures(Parameters *param){
     numResolutions = param->getResolutions();
     numBasicFeatures = 0;
     numRelativeFeatures = 0;
+    numTimeDimensionalOffsets = 0;
+    numBassFeatures = 0;
     //numThreePointOffsets = 0;
     resolutions.push_back(make_tuple(15,10)); resolutions.push_back(make_tuple(3,2)); resolutions.push_back(make_tuple(7,4));
     for (int index=0;index<numResolutions;index++){
@@ -46,17 +48,20 @@ BlobTimeFeatures::BlobTimeFeatures(Parameters *param){
         numBasicFeatures+= numColors*get<0>(numBlocks[index])*get<1>(numBlocks[index]);
         numRelativeFeatures+= get<0>(numOffsets[index]) * get<1>(numOffsets[index])* (1+numColors) * numColors/2;
         numTimeDimensionalOffsets+= get<0>(numOffsets[index]) * get<1>(numOffsets[index]) * numColors * numColors;
+        numBassFeatures+= (1+numColors) * numColors/2 * get<0>(numBlocks[index]) * get<0>(numBlocks[index]) * get<1>(numBlocks[index]) * get<1>(numBlocks[index]);
         //numThreePointOffsets+= get<0>(numOffsets[index]) * get<1>(numOffsets[index])* (1+numColors) * numColors/2 * numColors * get<0>(numOffsets[index])*get<1>(numOffsets[index]);
     }
     //get different base for calculation
     baseBasic.push_back(0);
     baseBpro.push_back(numBasicFeatures);
     baseTime.push_back(numBasicFeatures+numRelativeFeatures);
-    baseThreePoint.push_back(numBasicFeatures+numRelativeFeatures+numTimeDimensionalOffsets);
+    baseBass.push_back(numBasicFeatures+numRelativeFeatures+numTimeDimensionalOffsets);
+    //baseThreePoint.push_back(numBasicFeatures+numRelativeFeatures+numTimeDimensionalOffsets);
     for (int index=0;index<numResolutions-1;++index){
         baseBasic.push_back(baseBasic.back()+numColors*get<0>(numBlocks[index])*get<1>(numBlocks[index]));
         baseBpro.push_back(baseBpro.back()+get<0>(numOffsets[index]) * get<1>(numOffsets[index])* (1+numColors) * numColors/2);
         baseTime.push_back(baseTime.back()+ get<0>(numOffsets[index]) * get<1>(numOffsets[index]) * numColors * numColors);
+        baseBass.push_back(baseBass.back()+(1+numColors) * numColors/2 * get<0>(numBlocks[index]) * get<0>(numBlocks[index]) * get<1>(numBlocks[index]) * get<1>(numBlocks[index]));
         //baseThreePoint.push_back(baseThreePoint.back()+get<0>(numOffsets[index]) * get<1>(numOffsets[index])* (1+numColors) * numColors/2 * numColors* get<0>(numOffsets[index])*get<1>(numOffsets[index]));
     }
     
@@ -71,6 +76,7 @@ BlobTimeFeatures::BlobTimeFeatures(Parameters *param){
                 bproExistence[index][i][j]=true;
             }
         }
+        bassExistence.push_back(unordered_map<long long,int>());
         //threePointExistence.push_back(dense_hash_map<long long,int>());
         //threePointExistence.back().set_empty_key(numThreePointOffsets+1);
         //threePointExistence.back().resize(100000);
@@ -355,6 +361,55 @@ void BlobTimeFeatures::addThreePointOffsetsIndices(vector<long long>& features, 
     }
 }
 
+void BlobTimeFeatures::addBassFeatures(vector<long long>& features){
+    for (int index1=0;index1<blobActiveColors.size();++index1){
+        int c1 = blobActiveColors[index1];
+        for (auto k=blobs[c1].begin();k!=blobs[c1].end();++k){
+            for (auto h=blobs[c1].begin();h!=blobs[c1].end();++h){
+                
+                for (int index=0;index<numResolutions;++index){
+                    int row1 = get<0>(*k)/get<0>(resolutions[index]); int row2=get<0>(*h)/get<0>(resolutions[index]);
+                    int column1 = get<1>(*k)/get<1>(resolutions[index]); int column2=get<1>(*h)/get<1>(resolutions[index]);
+                    bool newBassFeature = false;
+                    if (row1>row2){
+                        newBassFeature = true;
+                    }else if (row1==row2 && column1>=column2){
+                        newBassFeature = true;
+                    }
+                    long long bassIndex = row1* get<1>(numBlocks[index])* get<0>(numBlocks[index]) * get<1>(numBlocks[index])+ column1* get<0>(numBlocks[index])* get<1>(numBlocks[index])+row2*get<1>(numBlocks[index])+column2;
+                    if (newBassFeature && bassExistence[index][bassIndex]==0){
+                        bassExistence[index][bassIndex] = 1;
+                        features.push_back(baseBass[index]+bassIndex+(numColors+numColors-c1+1)*c1/2*get<0>(numBlocks[index])*get<1>(numBlocks[index])*get<0>(numBlocks[index])*get<1>(numBlocks[index]));
+                    }
+                }
+                
+            }
+        }
+        resetBassExistence();
+        
+        for (int index2=index1+1;index2<blobActiveColors.size();++index2){
+            int c2 = blobActiveColors[index2];
+            for (auto it1=blobs[c1].begin();it1!=blobs[c1].end();++it1){
+                for (auto it2=blobs[c2].begin();it2!=blobs[c2].end();++it2){
+                    
+                    for (int index=0;index<numResolutions;++index){
+                        int row1 = get<0>(*it1)/get<0>(resolutions[index]); int row2=get<0>(*it2)/get<0>(resolutions[index]);
+                        int column1 = get<1>(*it1)/get<1>(resolutions[index]); int column2=get<1>(*it2)/get<1>(resolutions[index]);
+                      
+                        long long bassIndex = row1*get<1>(numBlocks[index])*get<0>(numBlocks[index])*get<1>(numBlocks[index])+ column1*get<0>(numBlocks[index])*get<1>(numBlocks[index])+row2*get<1>(numBlocks[index])+column2;
+                        if (bassExistence[index][bassIndex]==0){
+                            bassExistence[index][bassIndex] = 1;
+                            features.push_back(baseBass[index]+bassIndex+(numColors+numColors-c1+1)*c1/2*get<0>(numBlocks[index])*get<1>(numBlocks[index])*get<0>(numBlocks[index])*get<1>(numBlocks[index])+(c2-c1)*get<0>(numBlocks[index])*get<1>(numBlocks[index])*get<0>(numBlocks[index])*get<1>(numBlocks[index]));
+                        }
+                    }
+            
+                }
+            }
+            resetBassExistence();
+        }
+    }
+}
+
 
 void BlobTimeFeatures::getActiveFeaturesIndices(const ALEScreen &screen, const ALERAM &ram, vector<long long>& features){
     
@@ -373,14 +428,15 @@ void BlobTimeFeatures::getActiveFeaturesIndices(const ALEScreen &screen, const A
     if (previousBlobs.size()>0){
         addTimeDimensionalOffsets(features);
     }
-    features.push_back(numBasicFeatures+numRelativeFeatures + numTimeDimensionalOffsets);
+    addBassFeatures(features);
+    features.push_back(numBasicFeatures+numRelativeFeatures + numTimeDimensionalOffsets+numBassFeatures);
     previousBlobs = blobs;
     previousBlobActiveColors = blobActiveColors;
 }
 
 
 long long BlobTimeFeatures::getNumberOfFeatures(){
-    return numBasicFeatures+numRelativeFeatures + numTimeDimensionalOffsets+1;
+    return numBasicFeatures+numRelativeFeatures + numTimeDimensionalOffsets+numBassFeatures+1;
 }
 
 void BlobTimeFeatures::resetBproExistence(){
@@ -395,6 +451,12 @@ void BlobTimeFeatures::resetBproExistence(){
 void BlobTimeFeatures::resetThreePointExistence(){
     for (int index = 0; index<numResolutions;++index){
         threePointExistence[index].clear();
+    }
+}
+
+void BlobTimeFeatures::resetBassExistence(){
+    for (int index = 0; index<numResolutions;++index){
+        bassExistence[index].clear();
     }
 }
 

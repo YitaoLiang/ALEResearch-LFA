@@ -37,7 +37,7 @@ class BlobTimeFeatures : public Features::Features{
 		Parameters *param;
 		Background *background;
 		
-		long long numBasicFeatures, numRelativeFeatures, numTimeDimensionalOffsets, numThreePointOffsets;
+		long long numBasicFeatures, numRelativeFeatures, numTimeDimensionalOffsets, numThreePointOffsets, numBassFeatures;
         int numColors;
         int colorMultiplier;
     
@@ -57,9 +57,9 @@ class BlobTimeFeatures : public Features::Features{
         vector<vector<vector<bool> > > bproExistence;
         vector<vector<tuple<int,int> > > changed;
     
-        vector<unordered_map<long long,int> > threePointExistence;
+        vector<unordered_map<long long,int> > threePointExistence, bassExistence;
     
-        vector<long long> baseBpro, baseTime, baseBasic, baseThreePoint;
+        vector<long long> baseBpro, baseTime, baseBasic, baseThreePoint, baseBass;
     
         int neighborSize;
     
@@ -68,8 +68,10 @@ class BlobTimeFeatures : public Features::Features{
     void addRelativeFeaturesIndices(vector<long long>& features);
     void addTimeDimensionalOffsets(vector<long long>& features);
     void addThreePointOffsetsIndices(vector<long long>& features, tuple<int,int>& offset, tuple<int,int>& p1, long long& bproIndex);
+    void addBassFeatures(vector<long long>& features);
     void resetBproExistence();
     void resetThreePointExistence();
+    void resetBassExistence();
     void updateRepresentatiePixel(int& x, int& y, Disjoint_Set_Element* root, Disjoint_Set_Element* other);
     int getPowerTwoOffset(int rawDelta);
     
