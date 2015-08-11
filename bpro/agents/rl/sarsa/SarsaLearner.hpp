@@ -14,6 +14,7 @@
 #include "../RLLearner.hpp"
 #endif
 #include <vector>
+using namespace std;
 
 class SarsaLearner : public RLLearner{
 	private:

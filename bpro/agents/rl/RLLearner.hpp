@@ -11,6 +11,7 @@
 #include "../Agent.hpp"
 #endif
 #include <random>
+using namespace std;
 
 class RLLearner : public Agent{
 	protected:
