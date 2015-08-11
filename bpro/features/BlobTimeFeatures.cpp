@@ -128,8 +128,8 @@ BlobTimeFeatures::~BlobTimeFeatures(){
 }
 
 void BlobTimeFeatures::getBlobs(const ALEScreen &screen){
-    int screenWidth = screen.width();
-    int screenHeight = screen.height();
+    int screenWidth = 160;
+    int screenHeight = 210;
     
     
     vector<int> screenPixels(screenHeight*screenWidth,-1);
