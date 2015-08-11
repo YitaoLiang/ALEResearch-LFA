@@ -14,6 +14,7 @@
 #include <getopt.h>
 #include <string>
 #include <vector>
+#include <random>
 
 class Parameters{
 	private:
@@ -50,7 +51,10 @@ class Parameters{
 		int frequencySavingWeights;     //If we are asked to save the weights, We need to know how many frames to wait until saving them again
 		int toLoadWeights;              //whether we are going to load an already learned set of weights or not
 		int learningLength;             //The number of frames to be learned, in total. DQN uses, for example, 50,000,000.
-
+        int randomNoOp;
+        int noOpMax;
+    std::mt19937 agentRand;
+    
 	   /**
  		* Constructor defined as private to force the use of the constructor 
  		* that receive the commmand line information as parameter.
@@ -216,6 +220,8 @@ class Parameters{
 		void setLearningLength(int a);
         void setToSaveCheckPoint(int a);
         void setCheckPointName(std::string fileName);
+        void setRandomNoOp(int a);
+        void setNoOpMax(int a);
 		
 	public:
 		/**
@@ -350,4 +356,7 @@ class Parameters{
 		int getLearningLength();
         int getToSaveCheckPoint();
         std::string getCheckPointName();
+        std::mt19937* getRNG();
+        int getRandomNoOp();
+        int getNoOpMax();
 };

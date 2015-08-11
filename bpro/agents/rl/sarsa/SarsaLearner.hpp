@@ -39,6 +39,10 @@ class SarsaLearner : public RLLearner{
 		vector<vector<int> >nonZeroElig;//To optimize the implementation
         vector<vector<int> > featureSeen;
     
+        int randomNoOp;
+        int noOpMax;
+        int numStepsPerAction;
+    
 
 		/**
  		* Constructor declared as private to force the user to instantiate SarsaLearner

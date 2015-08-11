@@ -36,7 +36,7 @@ int Mathematics::argmax(std::vector<float> array){
 	return indices[rand()%indices.size()];
 }
 
-int Mathematics::argmax(std::vector<float>array,std::mt19937& randAgent){
+int Mathematics::argmax(std::vector<float>array,std::mt19937* randAgent){
     assert(array.size() > 0);
     //Discover max value of the array:
     double max = array[0];
@@ -55,6 +55,6 @@ int Mathematics::argmax(std::vector<float>array,std::mt19937& randAgent){
     }
     assert(indices.size() > 0);
     //Now we randomly pick one of the best
-    return indices[randAgent()%indices.size()];
+    return indices[(*randAgent)()%indices.size()];
 }
 

@@ -196,6 +196,18 @@ void Parameters::parseParametersFromConfigFile(std::string cfgFileName){
 		std::string folderWithBackgrounds = parameters["PATH_TO_BACKGROUND"];
 		setPathToBackground(folderWithBackgrounds, this->gameBeingPlayed);
 	}
+    
+    if (parameters.count("RANDOM_NO_OP")>0){
+        this->setRandomNoOp(atoi(parameters["RANDOM_NO_OP"].c_str()));
+    }else{
+        this->setRandomNoOp(0);
+    }
+    
+    if (parameters.count("NO_OP_MAX")>0){
+        this->setNoOpMax(atoi(parameters["NO_OP_MAX"].c_str()));
+    }else{
+        this->setNoOpMax(0);
+    }
 }
 
 void Parameters::setSaveTrajectoryPath(std::string name){
@@ -444,4 +456,24 @@ void Parameters::setToSaveCheckPoint(int a){
 
 int Parameters::getToSaveCheckPoint(){
     return this->toSaveCheckPoint;
+}
+
+void Parameters::setRandomNoOp(int a){
+    this->randomNoOp = a;
+}
+
+void Parameters::setNoOpMax(int a){
+    this->noOpMax = a;
+}
+
+std::mt19937* Parameters::getRNG(){
+    return (&this->agentRand);
+}
+
+int Parameters::getRandomNoOp(){
+    return this->randomNoOp;
+}
+
+int Parameters::getNoOpMax(){
+    return this->noOpMax;
 }

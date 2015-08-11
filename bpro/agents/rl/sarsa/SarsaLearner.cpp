@@ -32,6 +32,9 @@ SarsaLearner::SarsaLearner(ALEInterface& ale, Features *features, Parameters *pa
     saveWeightsEveryXFrames = param->getFrequencySavingWeights();
 	pathWeightsFileToLoad = param->getPathToWeightsFiles();
     featureSeen.resize(numActions);
+    randomNoOp = param->getRandomNoOp();
+    noOpMax = param->getNoOpMax();
+    numStepsPerAction = param->getNumStepsPerAction();
 	
 	for(int i = 0; i < numActions; i++){
 		//Initialize Q;
@@ -176,7 +179,7 @@ void SarsaLearner::saveCheckPoint(int episode, int totalNumberFrames, vector<flo
     string currentCheckPointName = checkPointName+"-checkPoint-Frames"+to_string(saveThreshold)+"-writing.txt";
     ofstream checkPointFile;
     checkPointFile.open(currentCheckPointName.c_str());
-    checkPointFile<<agentRand<<endl;
+    checkPointFile<<(*agentRand)<<endl;
     checkPointFile<<totalNumberFrames<<endl;
     checkPointFile << episode<<endl;
     checkPointFile << firstReward<<endl;
@@ -197,7 +200,7 @@ void SarsaLearner::saveCheckPoint(int episode, int totalNumberFrames, vector<flo
 }
 
 void SarsaLearner::loadCheckPoint(ifstream& checkPointToLoad){
-    checkPointToLoad >> agentRand;
+    checkPointToLoad >> (*agentRand);
     checkPointToLoad >> totalNumberFrames;
     checkPointToLoad >> episodePassed;
     checkPointToLoad >> firstReward;
@@ -224,6 +227,16 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
 	//Repeat (for each episode):
 	//This is going to be interrupted by the ALE code since I set max_num_frames beforehand
 	for(int episode = episodePassed+1; totalNumberFrames < totalNumberOfFramesToLearn; episode++){
+        //random no-op
+        unsigned int noOpNum = 0;
+        if (randomNoOp){
+            noOpNum = (*agentRand)()%(noOpMax)+1;
+            for (int i=0;i<noOpNum;++i){
+                ale.act(actions[0]);
+            }
+            reward.clear();
+        }
+        
 		//We have to clean the traces every episode:
 		for(unsigned int a = 0; a < nonZeroElig.size(); a++){
 			for(unsigned int i = 0; i < nonZeroElig[a].size(); i++){
@@ -296,7 +309,7 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
         episodeResults.push_back(cumReward-prevCumReward);
         episodeFrames.push_back(ale.getEpisodeFrameNumber());
         episodeFps.push_back(fps);
-		totalNumberFrames += ale.getEpisodeFrameNumber();
+		totalNumberFrames += ale.getEpisodeFrameNumber()-noOpNum* numStepsPerAction;
 		prevCumReward = cumReward;
 		ale.reset_game();
 		if(toSaveCheckPoint && totalNumberFrames>saveThreshold){
@@ -322,6 +335,14 @@ void SarsaLearner::evaluatePolicy(ALEInterface& ale, Features *features){
 	for(int episode = 1; episode < numEpisodesEval; episode++){
 		//Repeat(for each step of episode) until game is over:
 		for(int step = 0; !ale.game_over() && step < episodeLength; step++){
+            //random no-op
+            if (randomNoOp){
+                unsigned int noOpNum = (*agentRand)()%(noOpMax)+1;
+                for (int i=0;i<noOpNum;++i){
+                    ale.act(actions[0]);
+                }
+            }
+            
 			//Get state and features active on that state:		
 			F.clear();
 			features->getActiveFeaturesIndices(ale.getScreen(), ale.getRAM(), F);
