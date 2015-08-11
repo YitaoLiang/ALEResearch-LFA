@@ -35,12 +35,17 @@ BlobTimeFeatures::BlobTimeFeatures(Parameters *param){
     }
 
     //To get the total number of features:
-    numResolutions = param->getResolutions();
     numBasicFeatures = 0;
     numRelativeFeatures = 0;
     numTimeDimensionalOffsets = 0;
     //numThreePointOffsets = 0;
-    resolutions.push_back(make_tuple(15,10)); resolutions.push_back(make_tuple(3,2)); resolutions.push_back(make_tuple(7,4));
+    
+    auto resolutionsToRead = param->getResolutions();
+    for (int i=0;i<resolutionsToRead.size()/2;++i){
+        resolutions.push_back(make_tuple(resolutionsToRead[2*i],resolutionsToRead[2*i+1]));
+    }
+    numResolutions = resolutions.size();
+    
     for (int index=0;index<numResolutions;index++){
         numBlocks.push_back(make_tuple(210/get<0>(resolutions[index]),160/get<1>(resolutions[index])));
         numOffsets.push_back(make_tuple(2 * get<0>(numBlocks[index])-1, 2*get<1>(numBlocks[index])-1));
@@ -366,7 +371,7 @@ void BlobTimeFeatures::getActiveFeaturesIndices(const ALEScreen &screen, const A
     
     /*long long numBlobsForPrint = 0;
     for (auto it=blobs.begin();it!=blobs.end();++it){
-        numBlobsForPrint+=it->second.size();
+        numBlobsForPrint+=it->size();
     }
     cout<<numBlobsForPrint<<endl;*/
     getBasicFeatures(features);

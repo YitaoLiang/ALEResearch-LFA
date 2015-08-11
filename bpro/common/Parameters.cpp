@@ -198,9 +198,10 @@ void Parameters::parseParametersFromConfigFile(std::string cfgFileName){
     }
     
     if (parameters.count("RESOLUTIONS")>0){
-        this->setResolutions(atoi(parameters["RESOLUTIONS"].c_str()));
+        this->setResolutions(parameters["RESOLUTIONS"]);
     }else{
-        this->setResolutions(3);
+        parameters["RESOLUTIONS"] = "15*10";
+        this->setResolutions(parameters["RESOLUTIONS"]);
     }
     
     if (parameters.count("EPSILON_DECAY")>0){
@@ -462,8 +463,22 @@ void Parameters::setToLoadWeights(int a){
     this->toLoadWeights = a;
 }
 
-void Parameters::setResolutions(int a){
-    this->numResolutions = a;
+void Parameters::setResolutions(std::string a){
+    std::string s = "";
+    for (unsigned index=0;index<a.size();++index){
+        if (a[index]!='*'){
+            s = s+a[index];
+        }else{
+            s=s+' ';
+        }
+    }
+    
+    std::stringstream ss(s);
+    int c;
+    while (ss>>c){
+        resolutions.push_back(c);
+    }
+    assert(resolutions.size()%2==0);
 }
 
 void Parameters::setEpsilonDecay(int a){
@@ -526,8 +541,8 @@ int Parameters::getToSaveCheckPoint(){
     return this->toSaveCheckPoint;
 }
 
-int Parameters::getResolutions(){
-    return this->numResolutions;
+std::vector<int> Parameters::getResolutions(){
+    return this->resolutions;
 }
 
 int Parameters::getEpsilonDecay() {

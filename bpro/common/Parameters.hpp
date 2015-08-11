@@ -51,7 +51,7 @@ private:
     int frequencySavingWeights;     //If we are asked to save the weights, We need to know how many frames to wait until saving them again
     int toLoadWeights;              //whether we are going to load an already learned set of weights or not
     int learningLength;             //The number of frames to be learned, in total. DQN uses, for example, 50,000,000.
-    int numResolutions;
+    std::vector<int> resolutions;
     int epsilonDecay;
     int finalExplorationFrame;
     int neighborSize;
@@ -227,7 +227,7 @@ private:
     void setLearningLength(int a);
     void setToSaveCheckPoint(int a);
     void setCheckPointName(std::string fileName);
-    void setResolutions(int a);
+    void setResolutions(std::string a);
     void setEpsilonDecay(int a);
     void setFinalExplorationFrame(int a);
     void setNeighborSize(int a);
@@ -370,7 +370,7 @@ public:
     int getToSaveCheckPoint();
     std::string getCheckPointName();
     
-    int getResolutions();
+    std::vector<int> getResolutions();
     int getEpsilonDecay();
     int getFinalExplorationFrame();
     int getNeighborSize();
