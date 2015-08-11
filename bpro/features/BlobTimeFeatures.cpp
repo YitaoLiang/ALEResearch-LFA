@@ -35,13 +35,11 @@ BlobTimeFeatures::BlobTimeFeatures(Parameters *param){
     }
 
     //To get the total number of features:
-    numResolutions = param->getResolutions();
     numBasicFeatures = 0;
     numRelativeFeatures = 0;
     numTimeDimensionalOffsets = 0;
     numBassFeatures = 0;
     //numThreePointOffsets = 0;
-    resolutions.push_back(make_tuple(15,10)); resolutions.push_back(make_tuple(3,2)); resolutions.push_back(make_tuple(7,4));
     for (int index=0;index<numResolutions;index++){
         numBlocks.push_back(make_tuple(210/get<0>(resolutions[index]),160/get<1>(resolutions[index])));
         numOffsets.push_back(make_tuple(2 * get<0>(numBlocks[index])-1, 2*get<1>(numBlocks[index])-1));
@@ -51,6 +49,13 @@ BlobTimeFeatures::BlobTimeFeatures(Parameters *param){
         numBassFeatures+= (1+numColors) * numColors/2 * get<0>(numBlocks[index]) * get<0>(numBlocks[index]) * get<1>(numBlocks[index]) * get<1>(numBlocks[index]);
         //numThreePointOffsets+= get<0>(numOffsets[index]) * get<1>(numOffsets[index])* (1+numColors) * numColors/2 * numColors * get<0>(numOffsets[index])*get<1>(numOffsets[index]);
     }
+    
+    auto resolutionsToRead = param->getResolutions();
+    for (int i=0;i<resolutionsToRead.size()/2;++i){
+        resolutions.push_back(make_tuple(resolutionsToRead[2*i],resolutionsToRead[2*i+1]));
+    }
+    numResolutions = resolutions.size();
+    
     //get different base for calculation
     baseBasic.push_back(0);
     baseBpro.push_back(numBasicFeatures);
