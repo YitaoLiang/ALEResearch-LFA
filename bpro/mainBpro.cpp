@@ -24,7 +24,6 @@
 #ifndef BASIC_H
 #define BASIC_H
 #include "features/BPROFeatures.hpp"
-#include "features/RedundantBPROFeatures.hpp"
 #endif
 
 //#include <random>
@@ -55,7 +54,7 @@ int main(int argc, char** argv){
 	
 	ALEInterface ale(param.getDisplay());
 
-	ale.setFloat("repeat_action_probability", 0.0);
+	ale.setFloat("repeat_action_probability", 0.00);
 	ale.setInt("random_seed", param.getSeed());
 	ale.setFloat("frame_skip", param.getNumStepsPerAction());
 	ale.setInt("max_num_frames_per_episode", param.getEpisodeLength());

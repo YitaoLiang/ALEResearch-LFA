@@ -12,8 +12,6 @@
 #endif
 #include <random>
 
-using namespace std;
-
 class RLLearner : public Agent{
 	protected:
 		ActionVect actions;
