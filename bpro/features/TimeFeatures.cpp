@@ -187,7 +187,7 @@ void TimeFeatures::getActiveFeaturesIndices(const ALEScreen &screen, const ALERA
 	addRelativeFeaturesIndices(screen, featureIndex, whichColors, features);
     if (previousColors.size()==numColors){
         addTimeOffsetsIndices(whichColors,features);
-        }
+    }
     previousColors = whichColors;
     
 	//Bias feature

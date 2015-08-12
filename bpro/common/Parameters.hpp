@@ -54,6 +54,8 @@ class Parameters{
     
         int randomNoOp;
         int noOpMax;
+        int epsilonDecay;
+        int finalExplorationFrame;
     
         std::mt19937 agentRand;
     
@@ -224,6 +226,8 @@ class Parameters{
         void setCheckPointName(std::string fileName);
         void setRandomNoOp(int a);
         void setNoOpMax(int a);
+        void setEpsilonDecay(int a);
+        void setFinalExplorationFrame(int a);
 		
 	public:
 		/**
@@ -361,4 +365,6 @@ class Parameters{
         std::mt19937* getRNG();
         int getRandomNoOp();
         int getNoOpMax();
+        int getEpsilonDecay();
+        int getFinalExplorationFrame();
 };
