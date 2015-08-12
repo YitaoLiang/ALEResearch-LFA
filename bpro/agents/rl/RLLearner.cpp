@@ -29,7 +29,8 @@ RLLearner::RLLearner(ALEInterface& ale, Parameters *param, int seed){
 		actions = ale.getLegalActionSet();
 	}
 	numActions = actions.size();
-    agentRand.seed(seed);
+    agentRand = param->getRNG();
+    agentRand->seed(seed);
 }
 
 int RLLearner::epsilonGreedy(vector<float> &QValues){
@@ -37,11 +38,11 @@ int RLLearner::epsilonGreedy(vector<float> &QValues){
 
 	int action = Mathematics::argmax(QValues,agentRand);
 	//With probability epsilon: a <- random action in A(s)
-	int random = agentRand();
+	int random = (*agentRand)();
 	if((random % int(nearbyint(1.0/epsilon))) == 0) {
         //if((rand()%int(1.0/epsilon)) == 0){
 		randomActionTaken = 1;
-		action = agentRand() % numActions;
+		action = (*agentRand)() % numActions;
 	}
     return action;
 }

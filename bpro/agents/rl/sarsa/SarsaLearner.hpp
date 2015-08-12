@@ -30,16 +30,16 @@ class SarsaLearner : public RLLearner{
         int totalNumberFrames;
         long long maxFeatVectorNorm;
         int saveThreshold;
+        int randomNoOp;
+        int noOpMax;
+        int numStepsPerAction;
 
 		vector<long long> F;					//Set of features active
 		vector<long long> Fnext;              //Set of features active in next state
 		vector<float> Q;               //Q(a) entries
 		vector<float> Qnext;           //Q(a) entries for next action
-    vector<unordered_map<long long, float> > e;       //Eligibility trace
-    vector<unordered_map<long long, float> > w;     //Theta, weights vector
-		//vector<vector<long long> >nonZeroElig;//To optimize the implementation
-        //vector<vector<int> > featureSeen;
-    
+        vector<unordered_map<long long, float> > e;       //Eligibility trace
+        vector<unordered_map<long long, float> > w;     //Theta, weights vector
 
 		/**
  		* Constructor declared as private to force the user to instantiate SarsaLearner
