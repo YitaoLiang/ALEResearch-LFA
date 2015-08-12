@@ -43,7 +43,7 @@ private:
     int noOpMax;
     int numStepsPerAction;
     
-    long long numGroups;
+    long long numFeaturesSeen;
     
     vector<long long> F;					//Set of features active
     vector<long long> Fnext;              //Set of features active in next state
@@ -54,8 +54,7 @@ private:
     vector<vector<long long> >nonZeroElig;//To optimize the implementation
     //vector<vector<long long> > featureSeen;
     unordered_map<long long,long long> featureTranslate;
-    vector<Group> groups;
-    
+   
     /**
      * Constructor declared as private to force the user to instantiate SarsaLearner
      * informing the parameters to learning/execution.
@@ -95,7 +94,7 @@ private:
     void loadWeights();
     void saveCheckPoint(int episode, int totalNumberFrames,  vector<float>& episodeResults, int& frequency, vector<int>& episodeFrames, vector<double>& episodeFps);
     void loadCheckPoint(ifstream& checkPointToLoad);
-    void groupFeatures(vector<long long>& activeFeatures);
+    void translateFeatures(vector<long long>& activeFeatures);
 public:
     SarsaLearner(ALEInterface& ale, Features *features, Parameters *param,int seed);
     /**
