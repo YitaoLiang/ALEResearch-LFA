@@ -291,7 +291,6 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
             for (int i=0;i<noOpNum;++i){
                 ale.act(actions[0]);
             }
-            reward.clear();
         }
         
         //We have to clean the traces every episode:
