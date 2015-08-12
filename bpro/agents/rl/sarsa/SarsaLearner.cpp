@@ -16,6 +16,7 @@
 #include "SarsaLearner.hpp"
 #include <stdio.h>
 #include <math.h>
+#include <set>
 using namespace std;
 //using google::dense_hash_map;
 
@@ -38,9 +39,6 @@ SarsaLearner::SarsaLearner(ALEInterface& ale, Features *features, Parameters *pa
     randomNoOp = param->getRandomNoOp();
     noOpMax = param->getNoOpMax();
     numStepsPerAction = param->getNumStepsPerAction();
-    
-    //featureTranslate.set_empty_key(numFeatures+1);
-    //featureTranslate.min_load_factor(0.00);
     
     for(int i = 0; i < numActions; i++){
         //Initialize Q;
@@ -318,6 +316,7 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
             reward.push_back(0.0);
             reward.push_back(0.0);
             updateQValues(F, Q);
+            updateReplTrace(currentAction, F);
             
             sanityCheck();
             //Take action, observe reward and next state:
@@ -344,10 +343,8 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
                 maxFeatVectorNorm = trueFeatureSize;
                 learningRate = alpha/maxFeatVectorNorm;
             }
-            
             delta = reward[0] + gamma * Qnext[nextAction] - Q[currentAction];
             
-            updateReplTrace(currentAction, F);
             //Update weights vector:
             for(unsigned int a = 0; a < nonZeroElig.size(); a++){
                 for(unsigned int i = 0; i < nonZeroElig[a].size(); i++){
@@ -486,7 +483,10 @@ void SarsaLearner::groupFeatures(vector<long long>& activeFeatures){
             activeFeatures.push_back(numGroups-1);
             for (unsigned a = 0;a<w.size();++a){
                 w[a].push_back(w[a][groupIndex]);
-                e[a].push_back(0.00);
+                e[a].push_back(e[a][groupIndex]);
+                if (e[a].back()>=traceThreshold ){
+                    nonZeroElig[a].push_back(numGroups-1);
+                }
             }
             groups[groupIndex].numFeatures = groups[groupIndex].numFeatures - groups[groupIndex].features.size();
         }else if(groups[groupIndex].features.size()==groups[groupIndex].numFeatures){
