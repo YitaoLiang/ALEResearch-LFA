@@ -12,16 +12,10 @@
 #define TIME_FEATURES_H
 #include "TimeFeatures.hpp"
 #endif
-#ifndef BASIC_FEATURES_H
-#define BASIC_FEATURES_H
-#include "BasicFeatures.hpp"
-#endif
 
 #include <set>
 #include <assert.h>
 using namespace std;
-//#include <tuple>
-//#include <boost/tuple/tuple.hpp> //TODO: I have to remove this to not have to depend on boost
 
 TimeFeatures::TimeFeatures(Parameters *param){
     this->param = param;
@@ -33,39 +27,19 @@ TimeFeatures::TimeFeatures(Parameters *param){
         this->background = new Background(param);
     }
 
-	//To get the total number of features:
-	//TODO: Fix this!
     numBasicFeatures = this->param->getNumColumns() * this->param->getNumRows() * this->param->getNumColors();
 	numRelativeFeatures = (2 * this->param->getNumColumns() - 1) * (2 * this->param->getNumRows() - 1) 
 							* (1+this->param->getNumColors()) * this->param->getNumColors()/2;
     numTimeDimensionalOffsets = this->param->getNumColors() * this->param->getNumColors() *(2 * this->param->getNumColumns() - 1) * (2 * this->param->getNumRows() - 1) ;
-    numThreePointOffsets = numRelativeFeatures * this->param->getNumColors() * (2 * this->param->getNumColumns() - 1) * (2 * this->param->getNumRows() - 1);
-    bproChanged.clear();
-    bproExistence.resize(2*numRows-1);
-    for (int i=0;i<2*numRows-1;i++){
-        bproExistence[i].resize(2*numColumns-1);
-        for (int j=0;j<2*numColumns-1;j++){
-            bproExistence[i][j]=true;
-        }
-    }
-    threePointChanged.clear();
-    threePointExistence.resize(2*numRows-1);
-    for (int i=0;i<2*numRows-1;i++){
-        threePointExistence[i].resize(2*numColumns-1);
-        for (int j=0;j<2*numColumns-1;j++){
-            threePointExistence[i][j].resize(numColors);
-            for (int c=0;c<numColors;c++){
-                threePointExistence[i][j][c].resize(2*numRows-1);
-                for (int h=0;h<2*numRows-1;h++){
-                    threePointExistence[i][j][c][h].resize(2*numColumns-1);
-                    for (int k=0;k<2*numColumns-1;k++){
-                        threePointExistence[i][j][c][h][k]=true;
-                    }
-                }
-            }
-        }
-    }
     
+    pairwiseChanged.clear();
+    pairwiseExistence.resize(2*numRows-1);
+    for (int i=0;i<2*numRows-1;i++){
+        pairwiseExistence[i].resize(2*numColumns-1);
+        for (int j=0;j<2*numColumns-1;j++){
+            pairwiseExistence[i][j]=true;
+        }
+    }
 }
 
 TimeFeatures::~TimeFeatures(){}
@@ -136,18 +110,15 @@ void TimeFeatures::addRelativeFeaturesIndices(const ALEScreen &screen, long long
                 rowDelta+=numRows-1;
                 columnDelta+=numColumns-1;
                 tuple<int,int> pos (rowDelta,columnDelta);
-                bproChanged.push_back(pos);
-                if (newBproFeature && bproExistence[rowDelta][columnDelta]){
-                    bproExistence[rowDelta][columnDelta]=false;
+                pairwiseChanged.push_back(pos);
+                if (newBproFeature && pairwiseExistence[rowDelta][columnDelta]){
+                    pairwiseExistence[rowDelta][columnDelta]=false;
                     features.push_back(numBasicFeatures+(numColors+numColors-c1+1)*c1/2*numRowOffsets*numColumnOffsets+rowDelta*numColumnOffsets+columnDelta);
                 }
-                long long index=numBasicFeatures+(long long)((numColors+numColors-c1+1)*c1/2*numRowOffsets*numColumnOffsets)+(long long)rowDelta*numColumnOffsets+(long long)columnDelta;
-                addThreePointOffsetsIndices(pos,whichColors[c1][k],features,index,whichColors);
 
             }
         }
-        resetBproExistence(bproExistence,bproChanged);
-        resetThreePointExistence();
+        resetPairwiseExistence();
         
         for (int c2=c1+1;c2<numColors;c2++){
             if (whichColors[c1].size()>0 && whichColors[c2].size()>0){
@@ -156,19 +127,17 @@ void TimeFeatures::addRelativeFeaturesIndices(const ALEScreen &screen, long long
                         int rowDelta = get<0>(whichColors[c1][it1])-get<0>(whichColors[c2][it2])+numRows-1;
                         int columnDelta = get<1>(whichColors[c1][it1])-get<1>(whichColors[c2][it2])+numColumns-1;
                         tuple<int,int> pos(rowDelta,columnDelta);
-                        bproChanged.push_back(pos);
+                        pairwiseChanged.push_back(pos);
                         long long index=numBasicFeatures+(long long)((numColors+numColors-c1+1)*c1/2*numRowOffsets*numColumnOffsets)+(long long)((c2-c1)*numRowOffsets*numColumnOffsets)+(long long)rowDelta*numColumnOffsets+(long long)columnDelta;
-                        if (bproExistence[rowDelta][columnDelta]){
-                            bproExistence[rowDelta][columnDelta]=false;
+                        if (pairwiseExistence[rowDelta][columnDelta]){
+                            pairwiseExistence[rowDelta][columnDelta]=false;
                             features.push_back(index);
                         }
-                        addThreePointOffsetsIndices(pos,whichColors[c2][it2],features,index,whichColors);
                         
                     }
                 }
             }
-            resetBproExistence(bproExistence,bproChanged);
-            resetThreePointExistence();
+            resetPairwiseExistence();
         }
     }    
 }
@@ -183,37 +152,18 @@ void TimeFeatures::addTimeOffsetsIndices(vector<vector<tuple<int,int> > > &which
                     for (vector<tuple<int,int> >::iterator it2=whichColors[c2].begin();it2!=whichColors[c2].end();it2++){
                         int rowDelta = get<0>(*it1)-get<0>(*it2)+numRows-1;
                         int columnDelta = get<1>(*it1)-get<1>(*it2)+numColumns-1;
-                        if (bproExistence[rowDelta][columnDelta]){
+                        if (pairwiseExistence[rowDelta][columnDelta]){
                             tuple<int,int> pos(rowDelta,columnDelta);
-                            bproChanged.push_back(pos);
-                            bproExistence[rowDelta][columnDelta]=false;
+                            pairwiseChanged.push_back(pos);
+                            pairwiseExistence[rowDelta][columnDelta]=false;
                             features.push_back(numBasicFeatures+numRelativeFeatures+c1*numColors*numRowOffsets*numColumnOffsets+c2*numRowOffsets*numColumnOffsets+rowDelta*numColumnOffsets+columnDelta);
                         }
                     }
                 }
             }
-            resetBproExistence(bproExistence,bproChanged);
+            resetPairwiseExistence();
         }
     }
-}
-
-void TimeFeatures::addThreePointOffsetsIndices(tuple<int,int> offset, tuple<int,int> p1, vector<long long>& features, long long index,vector<vector<tuple<int,int> > > &whichColors){
-    long long numRowOffsets = 2*numRows - 1;
-    long long numColumnOffsets = 2*numColumns - 1;
-    
-    for (int c3=0;c3<numColors;c3++){
-            for (vector<tuple<int,int> >::iterator it = whichColors[c3].begin();it!=whichColors[c3].end();it++){
-                int rowDelta = get<0>(p1)-get<0>(*it)+numRows-1;
-                int columnDelta = get<1>(p1)-get<1>(*it)+numColumns-1;
-                if (threePointExistence[get<0>(offset)][get<1>(offset)][c3][rowDelta][columnDelta]){
-                    tuple<int,int,int,int,int> pos(get<0>(offset),get<1>(offset),c3,rowDelta,columnDelta);
-                    threePointChanged.push_back(pos);
-                    threePointExistence[get<0>(offset)][get<1>(offset)][c3][rowDelta][columnDelta]=false;
-                    features.push_back(numBasicFeatures+numRelativeFeatures+numTimeDimensionalOffsets+index*(long long)numColors*numRowOffsets*numColumnOffsets+(long long)c3*numRowOffsets*numColumnOffsets+(long long)rowDelta*numColumnOffsets+(long long)columnDelta);
-                }
-                
-            }
-        }
 }
 
 void TimeFeatures::getActiveFeaturesIndices(const ALEScreen &screen, const ALERAM &ram, vector<long long>& features){
@@ -239,26 +189,20 @@ void TimeFeatures::getActiveFeaturesIndices(const ALEScreen &screen, const ALERA
         addTimeOffsetsIndices(whichColors,features);
         }
     previousColors = whichColors;
-	//Bias
-	features.push_back(numBasicFeatures+numRelativeFeatures+numTimeDimensionalOffsets+numThreePointOffsets);
+    
+	//Bias feature
+	features.push_back(numBasicFeatures+numRelativeFeatures+numTimeDimensionalOffsets);
 }
 
 long long TimeFeatures::getNumberOfFeatures(){
-    return numBasicFeatures + numRelativeFeatures +numTimeDimensionalOffsets+numThreePointOffsets+1;
+    return numBasicFeatures + numRelativeFeatures +numTimeDimensionalOffsets+1;
 }
 
-void TimeFeatures::resetBproExistence(vector<vector<bool> >& existence, vector<tuple<int,int> >& changed){
-    for (vector<tuple<int,int> >::iterator it = changed.begin();it!=changed.end();it++){
-        existence[get<0>(*it)][get<1>(*it)]=true;
+void TimeFeatures::resetPairwiseExistence(){
+    for (vector<tuple<int,int> >::iterator it = pairwiseChanged.begin();it!=pairwiseChanged.end();it++){
+        pairwiseExistence[get<0>(*it)][get<1>(*it)]=true;
     }
-    changed.clear();
-}
-
-void TimeFeatures::resetThreePointExistence(){
-    for (auto it=threePointChanged.begin();it!=threePointChanged.end();it++){
-        threePointExistence[get<0>(*it)][get<1>(*it)][get<2>(*it)][get<3>(*it)][get<4>(*it)] = true;
-    }
-    threePointChanged.clear();
+    pairwiseChanged.clear();
 }
 
 void TimeFeatures::clearCash(){

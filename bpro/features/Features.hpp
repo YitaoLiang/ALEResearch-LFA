@@ -16,6 +16,8 @@
 #include <ale_interface.hpp>
 #endif
 
+using namespace std;
+
 class Features{
 	private:
 		
