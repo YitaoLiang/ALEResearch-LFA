@@ -208,6 +208,18 @@ void Parameters::parseParametersFromConfigFile(std::string cfgFileName){
     }else{
         this->setNoOpMax(0);
     }
+    
+    if (parameters.count("EPSILON_DECAY")>0){
+        this->setEpsilonDecay(atoi(parameters["EPSILON_DECAY"].c_str()));
+    }else{
+        this->setEpsilonDecay(0);
+    }
+    
+    if (parameters.count("FINAL_EXPLORATION_FRAME")>0){
+        this->setFinalExplorationFrame(atoi(parameters["FINAL_EXPLORATION_FRAME"].c_str()));
+    }else{
+        this->setFinalExplorationFrame(0);
+    }
 }
 
 void Parameters::setSaveTrajectoryPath(std::string name){
@@ -476,4 +488,20 @@ int Parameters::getRandomNoOp(){
 
 int Parameters::getNoOpMax(){
     return this->noOpMax;
+}
+
+void Parameters::setEpsilonDecay(int a){
+    this->epsilonDecay =a;
+}
+
+void Parameters::setFinalExplorationFrame(int a){
+    this->finalExplorationFrame = a;
+}
+
+int Parameters::getEpsilonDecay() {
+    return this->epsilonDecay;
+}
+
+int Parameters::getFinalExplorationFrame(){
+    return this->finalExplorationFrame;
 }
