@@ -493,6 +493,7 @@ void SarsaLearner::groupFeatures(vector<long long>& activeFeatures){
             activeFeatures.push_back(groupIndex);
         }
         groups[groupIndex].features.clear();
+        groups[groupIndex].features.shrink_to_fit();
     }
 }
 
