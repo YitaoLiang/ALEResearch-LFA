@@ -147,8 +147,8 @@ void BPROFeatures::addRelativeFeaturesIndices(const ALEScreen &screen, int featu
 }
 
 void BPROFeatures::getActiveFeaturesIndices(const ALEScreen &screen, const ALERAM &ram, vector<int>& features){
-	int screenWidth = screen.width();
-	int screenHeight = screen.height();
+	int screenWidth = 160;
+    int screenHeight = 210;
 	int blockWidth = screenWidth / numColumns;
 	int blockHeight = screenHeight / numRows;
 
