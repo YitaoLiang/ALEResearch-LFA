@@ -55,7 +55,7 @@ int main(int argc, char** argv){
 	ALEInterface ale(param.getDisplay());
 
 	ale.setFloat("repeat_action_probability", 0.00);
-	ale.setInt("random_seed", param.getSeed());
+	ale.setInt("random_seed", 2*param.getSeed());
 	ale.setFloat("frame_skip", param.getNumStepsPerAction());
 	ale.setInt("max_num_frames_per_episode", param.getEpisodeLength());
     ale.setBool("color_averaging", true);
@@ -64,7 +64,7 @@ int main(int argc, char** argv){
 
     //mt19937 agentRand(param.getSeed());
 	//Instantiating the learning algorithm:
-	SarsaLearner sarsaLearner(ale, &features, &param, param.getSeed());
+	SarsaLearner sarsaLearner(ale, &features, &param, 2*param.getSeed()-1);
     //Learn a policy:
     sarsaLearner.learnPolicy(ale, &features);
     
