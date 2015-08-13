@@ -12,16 +12,17 @@
 #include <stdio.h>
 #include <random>
 
-class FourwiseHash:{
+class FourwiseHash{
     protected:
         int a,b,c,d;
         std::mt19937 randomNumberGenerator;
         int hashTableSize;
     public:
-        FourwiseHash(int seed, int hashTableSize);
+        FourwiseHash();
         ~FourwiseHash();
-    int hash(long long index);
-}
+        void seed(int seed, int hashTableSize);
+        int hash(long long index);
+};
 
 
 #endif /* defined(____fourwiseHash__) */

@@ -191,7 +191,8 @@ void TimeFeatures::getActiveFeaturesIndices(const ALEScreen &screen, const ALERA
     previousColors = whichColors;
     
 	//Bias feature
-	features.push_back(numBasicFeatures+numRelativeFeatures+numTimeDimensionalOffsets);
+	//features.push_back(numBasicFeatures+numRelativeFeatures+numTimeDimensionalOffsets);
+    //now Bias feature is included in the sarsaAgent
 }
 
 long long TimeFeatures::getNumberOfFeatures(){

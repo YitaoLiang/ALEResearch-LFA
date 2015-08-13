@@ -14,15 +14,8 @@
 #include "../RLLearner.hpp"
 #endif
 #include <vector>
-#include <unordered_map>
-//#include <sparsehash/dense_hash_map>
+#include "../../../common/fourwiseHash.hpp"
 using namespace std;
-//using google::dense_hash_map;
-
-struct Group{
-    long long numFeatures;
-    vector<long long> features;
-};
 
 class SarsaLearner : public RLLearner{
 private:
@@ -42,19 +35,26 @@ private:
     int randomNoOp;
     int noOpMax;
     int numStepsPerAction;
-    
-    long long numFeaturesSeen;
+    int hashTableSize;
     
     vector<long long> F;					//Set of features active
     vector<long long> Fnext;              //Set of features active in next state
+    vector<int> Fsign;
+    vector<int> FnextSign;
+    
     vector<float> Q;               //Q(a) entries
     vector<float> Qnext;           //Q(a) entries for next action
-    vector<vector<float> > e;       //Eligibility trace
-    vector<vector<float> > w;     //Theta, weights vector
+    
+    
+    float ** e;       //Eligibility trace
+    float ** w;     //Theta, weights vector
+    int * featureValues;
+    bool * activeHashedFeatures;
+    
     vector<vector<long long> >nonZeroElig;//To optimize the implementation
-    //vector<vector<long long> > featureSeen;
-    unordered_map<long long,long long> featureTranslate;
-   
+    
+    FourwiseHash fourwiseHash;
+    
     /**
      * Constructor declared as private to force the user to instantiate SarsaLearner
      * informing the parameters to learning/execution.
@@ -71,30 +71,17 @@ private:
      * It updates the vector<double> Q assuming that vector<int> F is filled, as it sums just the weights
      * that are active in F.
      */
-    void updateQValues(vector<long long> &Features, vector<float> &QValues);
+    void updateQValues(vector<long long> &Features, vector<float>& QValues);
     /**
-     * When using Replacing traces, all values not related to the current action are set to 0, while the
-     * values for the current action that their features are active are set to 1. The traces decay following
-     * the rule: e[action][i] = gamma * lambda * e[action][i]. It is possible to also define thresholding.
-     */
-    void updateReplTrace(int action, vector<long long> &Features);
-    /**
-     * When using Replacing traces, all values not related to the current action are set to 0, while the
+     * When using acumulative traces, all values not related to the current action are set to 0, while the
      * values for the current action that their features are active are added 1. The traces decay following
      * the rule: e[action][i] = gamma * lambda * e[action][i]. It is possible to also define thresholding.
      */
     void updateAcumTrace(int action, vector<long long> &Features);
-    /**
-     * Prints the weights in a file. Each line will contain a weight.
-     */
-    void saveWeightsToFile(string suffix="");
-    /**
-     * Loads the weights saved in a file. Each line will contain a weight.
-     */
-    void loadWeights();
     void saveCheckPoint(int episode, int totalNumberFrames,  vector<float>& episodeResults, int& frequency, vector<int>& episodeFrames, vector<double>& episodeFps);
     void loadCheckPoint(ifstream& checkPointToLoad);
-    void translateFeatures(vector<long long>& activeFeatures);
+    void translateFeatures(vector<long long>& features);
+    
 public:
     SarsaLearner(ALEInterface& ale, Features *features, Parameters *param,int seed);
     /**

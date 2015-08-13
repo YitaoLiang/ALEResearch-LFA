@@ -220,6 +220,12 @@ void Parameters::parseParametersFromConfigFile(std::string cfgFileName){
     }else{
         this->setFinalExplorationFrame(0);
     }
+    
+    if (parameters.count("HASH_TABLE_SIZE")>0){
+        this->setHashTableSize(atoi(parameters["HASH_TABLE_SIZE"].c_str()));
+    }else{
+        assert(parameters.count("HASH_TABLE_SIZE")>0);
+    }
 }
 
 void Parameters::setSaveTrajectoryPath(std::string name){
@@ -504,4 +510,12 @@ int Parameters::getEpsilonDecay() {
 
 int Parameters::getFinalExplorationFrame(){
     return this->finalExplorationFrame;
+}
+
+void Parameters::setHashTableSize(int a){
+    this->hashTableSize = a;
+}
+
+int Parameters::getHashTableSize(){
+    return this->hashTableSize;
 }

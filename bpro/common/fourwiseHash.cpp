@@ -8,7 +8,13 @@
 
 #include "fourwiseHash.hpp"
 
-FourwiseHash::FourwiseHash(int seed, int hashTableSize){
+FourwiseHash::FourwiseHash(){
+}
+
+FourwiseHash::~FourwiseHash(){
+}
+
+void FourwiseHash::seed(int seed, int hashTableSize){
     randomNumberGenerator.seed(seed);
     a = randomNumberGenerator()%hashTableSize;
     b = randomNumberGenerator()%hashTableSize;
@@ -17,7 +23,7 @@ FourwiseHash::FourwiseHash(int seed, int hashTableSize){
     this->hashTableSize = hashTableSize;
 }
 
-fourwiseHash::hash(long long index){
+int FourwiseHash::hash(long long index){
     long long r;
     index = index % hashTableSize;
     r = (a*index) + b;

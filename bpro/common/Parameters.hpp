@@ -56,6 +56,7 @@ class Parameters{
         int noOpMax;
         int epsilonDecay;
         int finalExplorationFrame;
+        int hashTableSize;
     
         std::mt19937 agentRand;
     
@@ -228,6 +229,7 @@ class Parameters{
         void setNoOpMax(int a);
         void setEpsilonDecay(int a);
         void setFinalExplorationFrame(int a);
+        void setHashTableSize(int a);
 		
 	public:
 		/**
@@ -367,4 +369,5 @@ class Parameters{
         int getNoOpMax();
         int getEpsilonDecay();
         int getFinalExplorationFrame();
+        int getHashTableSize();
 };
