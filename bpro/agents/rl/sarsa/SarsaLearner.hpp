@@ -14,7 +14,7 @@
 #include "../RLLearner.hpp"
 #endif
 #include <vector>
-#include "../../../common/fourwiseHash.hpp"
+#include "../../../common/FourwiseHash.hpp"
 using namespace std;
 
 class SarsaLearner : public RLLearner{

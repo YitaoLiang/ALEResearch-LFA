@@ -6,7 +6,7 @@
 //
 //
 
-#include "fourwiseHash.hpp"
+#include "FourwiseHash.hpp"
 
 FourwiseHash::FourwiseHash(){
 }
