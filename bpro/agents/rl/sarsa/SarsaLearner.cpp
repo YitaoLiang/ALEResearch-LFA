@@ -394,15 +394,15 @@ void SarsaLearner::evaluatePolicy(ALEInterface& ale, Features *features){
     for(int episode = 1; episode < numEpisodesEval; episode++){
         //Repeat(for each step of episode) until game is over:
         gettimeofday(&tvBegin, NULL);
-        for(int step = 0; !ale.game_over() && step < episodeLength; step++){
-            //random no-op
-            if (randomNoOp){
-                unsigned int noOpNum = (*agentRand)()%(noOpMax)+1;
-                for (int i=0;i<noOpNum;++i){
-                    ale.act(actions[0]);
-                }
+        //random no-op
+        unsigned int noOpNum;
+        if (randomNoOp){
+            noOpNum = (*agentRand)()%(noOpMax)+1;
+            for (int i=0;i<noOpNum;++i){
+                ale.act(actions[0]);
             }
-            
+        }
+        for(int step = 0; !ale.game_over() && step < episodeLength; step++){
             //Get state and features active on that state:
             F.clear();
             features->getActiveFeaturesIndices(ale.getScreen(), ale.getRAM(), F);
