@@ -335,8 +335,9 @@ void SarsaLearner::evaluatePolicy(ALEInterface& ale, Features *features){
 	for(int episode = 1; episode < numEpisodesEval; episode++){
 		//Repeat(for each step of episode) until game is over:
         //random no-op
+        unsigned int noOpNum;
         if (randomNoOp){
-            unsigned int noOpNum = (*agentRand)()%(noOpMax)+1;
+            noOpNum = (*agentRand)()%(noOpMax)+1;
             for (int i=0;i<noOpNum;++i){
                 ale.act(actions[0]);
             }
