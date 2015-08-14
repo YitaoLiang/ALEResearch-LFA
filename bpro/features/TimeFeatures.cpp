@@ -178,7 +178,7 @@ void TimeFeatures::getActiveFeaturesIndices(const ALEScreen &screen, const ALERA
     //Before generating features we must check whether we can subtract the background:
     if(this->param->getSubtractBackground()){
         unsigned int sizeBackground = this->background->getWidth() * this->background->getHeight();
-        assert(sizeBackground == screen.width()*screen.height());
+        assert(sizeBackground == 160*210);
     }
 
     //We first get the Basic features, keeping track of the next featureIndex vector:
