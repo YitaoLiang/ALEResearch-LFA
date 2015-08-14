@@ -60,6 +60,11 @@ class Parameters{
     
         std::mt19937 agentRand;
     
+        int neighborSize;
+        int dropOut;
+        int finalNumberOfBlobs;
+        std::vector<int> resolutions;
+    
 	   /**
  		* Constructor defined as private to force the use of the constructor 
  		* that receive the commmand line information as parameter.
@@ -230,6 +235,10 @@ class Parameters{
         void setEpsilonDecay(int a);
         void setFinalExplorationFrame(int a);
         void setHashTableSize(int a);
+        void setNeighborSize(int a);
+        void setDropOut(int a);
+        void setFinalNumberOfBlobs(int a);
+        void setResolutions(std::string a);
 		
 	public:
 		/**
@@ -370,4 +379,8 @@ class Parameters{
         int getEpsilonDecay();
         int getFinalExplorationFrame();
         int getHashTableSize();
+        int getNeighborSize();
+        int getDropOut();
+        int getFinalNumberOfBlobs();
+        std::vector<int> getResolutions();
 };

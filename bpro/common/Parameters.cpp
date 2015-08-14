@@ -226,6 +226,31 @@ void Parameters::parseParametersFromConfigFile(std::string cfgFileName){
     }else{
         assert(parameters.count("HASH_TABLE_SIZE")>0);
     }
+    
+    if (parameters.count("RESOLUTIONS")>0){
+        this->setResolutions(parameters["RESOLUTIONS"]);
+    }else{
+        parameters["RESOLUTIONS"] = "15*10";
+        this->setResolutions(parameters["RESOLUTIONS"]);
+    }
+    
+    if (parameters.count("NEIGHBOR_SIZE")>0){
+        this->setNeighborSize(atoi(parameters["NEIGHBOR_SIZE"].c_str()));
+    }else{
+        this->setNeighborSize(3);
+    }
+    
+    if (parameters.count("DROP_OUT")>0){
+        this->setDropOut(atoi(parameters["DROP_OUT"].c_str()));
+    }else{
+        this->setDropOut(0);
+    }
+    
+    if (parameters.count("FINAL_NUMBER_OF_BLOBS")>0){
+        this->setFinalNumberOfBlobs(atoi(parameters["FINAL_NUMBER_OF_BLOBS"].c_str()));
+    }else{
+        this->setFinalNumberOfBlobs(0);
+    }
 }
 
 void Parameters::setSaveTrajectoryPath(std::string name){
@@ -518,4 +543,46 @@ void Parameters::setHashTableSize(int a){
 
 int Parameters::getHashTableSize(){
     return this->hashTableSize;
+}
+
+int Parameters::getNeighborSize(){
+    return this->neighborSize;
+}
+
+int Parameters::getDropOut(){
+    return this->dropOut;
+}
+
+std::vector<int> Parameters::getResolutions(){
+    return this->resolutions;
+}
+
+void Parameters::setNeighborSize(int a){
+    this->neighborSize = a;
+}
+
+void Parameters::setDropOut(int a){
+    this->dropOut = a;
+}
+
+void Parameters::setFinalNumberOfBlobs(int a){
+    this->finalNumberOfBlobs = a;
+}
+
+void Parameters::setResolutions(std::string a){
+    std::string s = "";
+    for (unsigned index=0;index<a.size();++index){
+        if (a[index]!='*'){
+            s = s+a[index];
+        }else{
+            s=s+' ';
+        }
+    }
+    
+    std::stringstream ss(s);
+    int c;
+    while (ss>>c){
+        resolutions.push_back(c);
+    }
+    assert(resolutions.size()%2==0);
 }

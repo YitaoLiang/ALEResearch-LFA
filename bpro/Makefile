@@ -24,8 +24,8 @@ endif
 
 all: learnerBlobTime
 
-learnerBlobTime: bin/mainBlobTime.o bin/Mathematics.o bin/Parameters.o bin/Timer.o bin/Features.o bin/Background.o bin/BlobTimeFeatures.o bin/RLLearner.o bin/SarsaLearner.o
-	$(CXX) $(FLAGS) bin/mainBlobTime.o bin/Mathematics.o bin/Timer.o bin/Parameters.o bin/Features.o bin/Background.o bin/BlobTimeFeatures.o bin/RLLearner.o bin/SarsaLearner.o -o learnerBlobTime
+learnerBlobTime: bin/mainBlobTime.o bin/Mathematics.o bin/Parameters.o bin/FourwiseHash.o bin/Timer.o bin/Features.o bin/Background.o bin/BlobTimeFeatures.o bin/RLLearner.o bin/SarsaLearner.o
+	$(CXX) $(FLAGS) bin/mainBlobTime.o bin/Mathematics.o bin/Timer.o bin/Parameters.o bin/FourwiseHash.o bin/Features.o bin/Background.o bin/BlobTimeFeatures.o bin/RLLearner.o bin/SarsaLearner.o -o learnerBlobTime
 
 bin/mainBlobTime.o: mainBlobTime.cpp
 	$(CXX) $(FLAGS) -c mainBlobTime.cpp -o bin/mainBlobTime.o
@@ -38,6 +38,9 @@ bin/Timer.o: common/Timer.cpp
 
 bin/Parameters.o: common/Parameters.cpp
 	$(CXX) $(FLAGS) -c common/Parameters.cpp -o bin/Parameters.o
+
+bin/FourwiseHash.o: common/FourwiseHash.cpp
+	$(CXX) $(FLAGS) -c common/FourwiseHash.cpp -o bin/FourwiseHash.o
 
 bin/Features.o: features/Features.cpp
 	$(CXX) $(FLAGS) -c features/Features.cpp -o bin/Features.o
