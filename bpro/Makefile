@@ -22,14 +22,13 @@ ifeq ($(strip $(USE_SDL)), 1)
   LDFLAGS += -lSDL -lSDL_gfx -lSDL_image
 endif
 
-all: learnerTimeoffsets
+all: learnerBlobTime
 
-learnerTimeoffsets: bin/mainTimeoffsets.o bin/Mathematics.o bin/Parameters.o bin/FourwiseHash.o bin/Timer.o bin/Features.o bin/Background.o bin/TimeFeatures.o bin/RLLearner.o bin/SarsaLearner.o
-	$(CXX) $(FLAGS) bin/mainTimeoffsets.o bin/Mathematics.o bin/Timer.o bin/Parameters.o bin/FourwiseHash.o bin/Features.o bin/Background.o bin/TimeFeatures.o bin/RLLearner.o bin/SarsaLearner.o -o learnerTimeoffsets
+learnerBlobTime: bin/mainBlobTime.o bin/Mathematics.o bin/Parameters.o bin/Timer.o bin/Features.o bin/Background.o bin/BlobTimeFeatures.o bin/RLLearner.o bin/SarsaLearner.o
+	$(CXX) $(FLAGS) bin/mainBlobTime.o bin/Mathematics.o bin/Timer.o bin/Parameters.o bin/Features.o bin/Background.o bin/BlobTimeFeatures.o bin/RLLearner.o bin/SarsaLearner.o -o learnerBlobTime
 
-bin/mainTimeoffsets.o: mainTimeoffsets.cpp
-	$(CXX) $(FLAGS) -c mainTimeoffsets.cpp -o bin/mainTimeoffsets.o
-
+bin/mainBlobTime.o: mainBlobTime.cpp
+	$(CXX) $(FLAGS) -c mainBlobTime.cpp -o bin/mainBlobTime.o
 
 bin/Mathematics.o: common/Mathematics.cpp
 	$(CXX) $(FLAGS) -c common/Mathematics.cpp -o bin/Mathematics.o
@@ -40,18 +39,15 @@ bin/Timer.o: common/Timer.cpp
 bin/Parameters.o: common/Parameters.cpp
 	$(CXX) $(FLAGS) -c common/Parameters.cpp -o bin/Parameters.o
 
-bin/FourwiseHash.o: common/FourwiseHash.cpp
-	$(CXX) $(FLAGS) -c common/FourwiseHash.cpp -o bin/FourwiseHash.o
-
 bin/Features.o: features/Features.cpp
 	$(CXX) $(FLAGS) -c features/Features.cpp -o bin/Features.o
 
 bin/Background.o: features/Background.cpp
 	$(CXX) $(FLAGS) -c features/Background.cpp -o bin/Background.o
 	
-bin/TimeFeatures.o: features/TimeFeatures.cpp
-	$(CXX) $(FLAGS) -c features/TimeFeatures.cpp -o bin/TimeFeatures.o
-
+bin/BlobTimeFeatures.o: features/BlobTimeFeatures.cpp
+	$(CXX) $(FLAGS) -c features/BlobTimeFeatures.cpp -o bin/BlobTimeFeatures.o	
+	
 bin/RLLearner.o: agents/rl/RLLearner.cpp
 	$(CXX) $(FLAGS) -c agents/rl/RLLearner.cpp -o bin/RLLearner.o
 

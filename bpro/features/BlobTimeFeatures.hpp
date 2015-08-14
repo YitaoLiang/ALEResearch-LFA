@@ -17,36 +17,67 @@
 #include "Background.hpp"
 #endif
 
-#include<tuple>
-#include<unordered_map>
+#include <tuple>
+#include <set>
+#include <unordered_map>
+//#include <sparsehash/unordered_map>
+//using google::unordered_map;
+
+struct Disjoint_Set_Element{
+    int rowUp, rowDown, columnLeft, columnRight;
+    int size;
+    int parent;
+    int color;
+};
 
 using namespace std;
 
-class TimeFeatures : public Features::Features{
+class BlobTimeFeatures : public Features::Features{
 	private:
 		Parameters *param;
 		Background *background;
 		
-        long long numBasicFeatures, numRelativeFeatures, numTimeDimensionalOffsets;
-        int numColumns, numRows, numColors;
+		long long numBasicFeatures, numRelativeFeatures, numTimeDimensionalOffsets, numThreePointOffsets;
+        int numColors;
+        int colorMultiplier;
     
-        vector<vector<bool> > pairwiseExistence;
-        vector<tuple<int,int> > pairwiseChanged;
+        int numResolutions;
+        vector<vector<vector<unsigned short> > >* fullNeighbors;
+        vector<vector<vector<unsigned short> > >* extraNeighbors;
     
-        vector<vector<tuple<int,int> > > previousColors;
+        vector<vector<tuple<int,int> > > blobs;
+        vector<vector<tuple<int,int> > > previousBlobs;
+        vector<int> blobActiveColors;
+        vector<int> previousBlobActiveColors;
     
-        int getBasicFeaturesIndices(const ALEScreen &screen, int blockWidth, int blockHeight,
-            vector<vector<tuple<int,int> > > &whichColors, vector<long long>& features);
-		void addRelativeFeaturesIndices(const ALEScreen &screen, long long featureIndex,
-            vector<vector<tuple<int,int> > > &whichColors, vector<long long>& features);
-        void addTimeOffsetsIndices(vector<vector<tuple<int,int> > >& whichColors, vector<long long>& features);
-        void resetPairwiseExistence();
+        vector<tuple<int,int> > resolutions;
+        vector<tuple<int,int> > numBlocks;
+        vector<tuple<int,int> > numOffsets;
+    
+        vector<vector<vector<bool> > > bproExistence;
+        vector<vector<tuple<int,int> > > changed;
+    
+        vector<unordered_map<long long,int> > threePointExistence;
+    
+        vector<long long> baseBpro, baseTime, baseBasic, baseThreePoint;
+    
+        int neighborSize;
+    
+    void getBlobs(const ALEScreen &screen);
+    void getBasicFeatures(vector<long long>& features);
+    void addRelativeFeaturesIndices(vector<long long>& features);
+    void addTimeDimensionalOffsets(vector<long long>& features);
+    void addThreePointOffsetsIndices(vector<long long>& features, tuple<int,int>& offset, tuple<int,int>& p1, long long& bproIndex);
+    void resetBproExistence();
+    void resetThreePointExistence();
+    void updateRepresentatiePixel(int& x, int& y, Disjoint_Set_Element* root, Disjoint_Set_Element* other);
+    int getPowerTwoOffset(int rawDelta);
     
 	public:
 		/**
 		* Destructor, used to delete the background, which is allocated dynamically.
 		*/
-		~TimeFeatures();
+		~BlobTimeFeatures();
 		/**
  		* TODO: COMMENT
  		* 
@@ -54,7 +85,7 @@ class TimeFeatures : public Features::Features{
  		*                   number of colors and the background information
  		* @return nothing, it is a constructor.
  		*/
-		TimeFeatures(Parameters *param);
+		BlobTimeFeatures(Parameters *param);
 		/**
  		* This method is the instantiation of the virtual method in the class Features (also check
  		* its documentation). It iterates over all tiles defined by the columns and rows and checks
