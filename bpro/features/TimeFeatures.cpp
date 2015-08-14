@@ -167,8 +167,8 @@ void TimeFeatures::addTimeOffsetsIndices(vector<vector<tuple<int,int> > > &which
 }
 
 void TimeFeatures::getActiveFeaturesIndices(const ALEScreen &screen, const ALERAM &ram, vector<long long>& features){
-	int screenWidth = screen.width();
-	int screenHeight = screen.height();
+    int screenWidth = 160;
+    int screenHeight = 210;
 	int blockWidth = screenWidth / numColumns;
 	int blockHeight = screenHeight / numRows;
 
