@@ -5,12 +5,12 @@
  ** REMARKS: - This implementation is basically Erik Talvitie's implementation, presented
  **            in the AAAI'15 LGCVG Workshop.
  **
- ** Author: Marlos C. Machado
+ ** Author: Yitao Liang
  ***************************************************************************************/
 
-#ifndef Blob_TIME_FEATURES_H
-#define Blob_TIME_FEATURES_H
-#include "BlobTimeFeatures.hpp"
+#ifndef Adaptive_Features_H
+#define Adaptive_Features_H
+#include "AdaptiveFeatures.hpp"
 #endif
 
 #include <set>
@@ -23,7 +23,7 @@ using namespace std;
 //using google::dense_hash_map;
 
 
-BlobTimeFeatures::BlobTimeFeatures(Parameters *param){
+AdaptiveFeatures::AdaptiveFeatures(Parameters *param){
     this->param = param;
     //numColumns  = param->getNumColumns();
     //numRows     = param->getNumRows();

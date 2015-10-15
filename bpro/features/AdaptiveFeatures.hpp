@@ -5,7 +5,7 @@
 ** REMARKS: - This implementation is basically Erik Talvitie's implementation, presented
 **            in the AAAI'15 LGCVG Workshop.
 **
-** Author: Marlos C. Machado
+** Author: Yitao Liang
 ***************************************************************************************/
 
 #ifndef FEATURES_H
@@ -32,7 +32,7 @@ struct Disjoint_Set_Element{
 
 using namespace std;
 
-class BlobTimeFeatures : public Features::Features{
+class AdaptiveFeatures : public Features::Features{
 	private:
 		Parameters *param;
 		Background *background;
