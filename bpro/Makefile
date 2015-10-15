@@ -61,6 +61,10 @@ bin/SarsaLearner.o: agents/rl/sarsa/SarsaLearner.cpp
 clean:
 	rm -rf ${OUT_FILE} bin/*.o
 	rm -f learner*
+	
+cleanEverything:
+	rm -rf ${OUT_FILE} bin/*.o
+	rm -f learner*
 	rm -f *.txt	
 
 
