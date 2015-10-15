@@ -60,8 +60,11 @@ bin/SarsaLearner.o: agents/rl/sarsa/SarsaLearner.cpp
 clean:
 	rm -rf ${OUT_FILE} bin/*.o
 	rm -f learner*
-	rm -f *.txt	
-
+	
+cleanEverything:
+	rm -rf ${OUT_FILE} bin/*.o
+	rm -f learner*
+	rm -f *.txt
 
 #This command needs to be executed in a osX before running the code:
 #export DYLD_LIBRARY_PATH="${DYLD_LIBRARY_PATH}:../lib/ale_0_4"
