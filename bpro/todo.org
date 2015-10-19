@@ -1,0 +1,21 @@
+Adaptive Feature Representation -*- mode: org -*-
+
+* A feature's elements:
+  - feature index (so we can use the index to represent features in the list of active features) 
+  - Location (this is the anchor pixel):
+    + x, y (index for rows and columns)
+    + resolutions of x and y
+    + color 
+  - A list of offsets:
+    + each offset is a location 
+    + Note the resolution in location is the resolution for the offset
+    + How to prevent redundancy?
+      - Possible Approach: the offset's color cannot be smaller than the anchor feature's color
+
+* How to preprocess the screen
+  - location -> color 
+  - color -> locations
+
+* Generate candidate features 
+  - 
+  
