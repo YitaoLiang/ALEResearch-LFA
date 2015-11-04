@@ -16,6 +16,8 @@
 #include <vector>
 #include <random>
 
+#ifndef PARAMETERS_H
+#define PARAMETERS_H
 class Parameters{
 private:
     std::string gameBeingPlayed;    //name of the game being played, this is used internally
@@ -59,6 +61,9 @@ private:
     int finalNumberOfBlobs;
     int randomNoOp;
     int noOpMax;
+    float promoteThreshold;
+    float demoteThreshold;
+    int numPromotions;
     
     std::mt19937 agentRand;
     
@@ -235,6 +240,9 @@ private:
     void setFinalNumberOfBlobs(int a);
     void setRandomNoOp(int a);
     void setNoOpMax(int a);
+    void setPromoteThreshold(float a);
+    void setDemoteThreshold(float a);
+    void setNumPromotions(int a);
     
 public:
     /**
@@ -379,4 +387,8 @@ public:
     std::mt19937* getRNG();
     int getRandomNoOp();
     int getNoOpMax();
+    float getPromoteThreshold();
+    float getDemoteThreshold();
+    int getNumPromotions();
 };
+#endif

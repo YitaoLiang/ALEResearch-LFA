@@ -22,13 +22,13 @@ ifeq ($(strip $(USE_SDL)), 1)
   LDFLAGS += -lSDL -lSDL_gfx -lSDL_image
 endif
 
-all: learnerBlobTime
+all: learnerAdaptive
 
-learnerBlobTime: bin/mainBlobTime.o bin/Mathematics.o bin/Parameters.o bin/Timer.o bin/Features.o bin/Background.o bin/BlobTimeFeatures.o bin/RLLearner.o bin/SarsaLearner.o
-	$(CXX) $(FLAGS) bin/mainBlobTime.o bin/Mathematics.o bin/Timer.o bin/Parameters.o bin/Features.o bin/Background.o bin/BlobTimeFeatures.o bin/RLLearner.o bin/SarsaLearner.o -o learnerBlobTime
+learnerAdaptive: bin/mainAdaptive.o bin/Mathematics.o bin/Parameters.o bin/Timer.o bin/Features.o bin/Background.o bin/AdaptiveFeatures.o bin/RLLearner.o bin/SarsaLearner.o
+	$(CXX) $(FLAGS) bin/mainAdaptive.o bin/Mathematics.o bin/Timer.o bin/Parameters.o bin/Features.o bin/Background.o bin/AdaptiveFeatures.o bin/RLLearner.o bin/SarsaLearner.o -o learnerAdaptive
 
-bin/mainBlobTime.o: mainBlobTime.cpp
-	$(CXX) $(FLAGS) -c mainBlobTime.cpp -o bin/mainBlobTime.o
+bin/mainAdaptive.o: mainAdaptive.cpp
+	$(CXX) $(FLAGS) -c mainAdaptive.cpp -o bin/mainAdaptive.o
 
 bin/Mathematics.o: common/Mathematics.cpp
 	$(CXX) $(FLAGS) -c common/Mathematics.cpp -o bin/Mathematics.o
@@ -45,8 +45,8 @@ bin/Features.o: features/Features.cpp
 bin/Background.o: features/Background.cpp
 	$(CXX) $(FLAGS) -c features/Background.cpp -o bin/Background.o
 	
-bin/BlobTimeFeatures.o: features/BlobTimeFeatures.cpp
-	$(CXX) $(FLAGS) -c features/BlobTimeFeatures.cpp -o bin/BlobTimeFeatures.o	
+bin/AdaptiveFeatures.o: features/AdaptiveFeatures.cpp
+	$(CXX) $(FLAGS) -c features/AdaptiveFeatures.cpp -o bin/AdaptiveFeatures.o	
 	
 bin/RLLearner.o: agents/rl/RLLearner.cpp
 	$(CXX) $(FLAGS) -c agents/rl/RLLearner.cpp -o bin/RLLearner.o
@@ -57,8 +57,11 @@ bin/SarsaLearner.o: agents/rl/sarsa/SarsaLearner.cpp
 clean:
 	rm -rf ${OUT_FILE} bin/*.o
 	rm -f learner*
-	rm -f *.txt	
-
+		
+cleanEverything:
+	rm -rf ${OUT_FILE} bin/*.o
+	rm -f learner*
+	rm -f *.txt
 
 #This command needs to be executed in a osX before running the code:
 #export DYLD_LIBRARY_PATH="${DYLD_LIBRARY_PATH}:../lib/ale_0_4"

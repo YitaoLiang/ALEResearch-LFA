@@ -3,33 +3,26 @@
  ** Sarsa(lambda)) from the book "R. Sutton and A. Barto; Reinforcement Learning: An
  ** Introduction. 1st edition. 1988."
  ** Some updates are made to make it more efficient, as not iterating over all features.
- **
+ ** Some updates are made to make it work with adaptive (representation) features
  ** TODO: Make it as efficient as possible.
  **
- ** Author: Marlos C. Machado
+ ** Author: Yitao Liang
  ***************************************************************************************/
 
-#ifndef RLLEARNER_H
-#define RLLEARNER_H
 #include "../RLLearner.hpp"
-#endif
 #include <vector>
 #include <unordered_map>
 //#include <sparsehash/dense_hash_map>
 using namespace std;
 //using google::dense_hash_map;
 
-struct Group{
-    long long numFeatures;
-    vector<long long> features;
-};
-
+#ifndef SARSA_LEARNER_H
+#define SARSA_LEARNER_H
 class SarsaLearner : public RLLearner{
 private:
     float alpha, delta, lambda, traceThreshold;
     float learningRate;
     int currentAction, nextAction;
-    long long numFeatures;
     int toSaveWeightsAfterLearning, saveWeightsEveryXFrames, toSaveCheckPoint;
     
     std::string nameWeightsFile, pathWeightsFileToLoad;
@@ -42,8 +35,9 @@ private:
     int randomNoOp;
     int noOpMax;
     int numStepsPerAction;
-    
-    long long numGroups;
+    float promoteThreshold;
+    float demoteThreshold;
+    int numPromotions;
     
     vector<long long> F;					//Set of features active
     vector<long long> Fnext;              //Set of features active in next state
@@ -51,10 +45,9 @@ private:
     vector<float> Qnext;           //Q(a) entries for next action
     vector<vector<float> > e;       //Eligibility trace
     vector<vector<float> > w;     //Theta, weights vector
+    vector<float> stepSize; //
     vector<vector<long long> >nonZeroElig;//To optimize the implementation
-    //vector<vector<long long> > featureSeen;
     unordered_map<long long,long long> featureTranslate;
-    vector<Group> groups;
     
     /**
      * Constructor declared as private to force the user to instantiate SarsaLearner
@@ -88,14 +81,14 @@ private:
     /**
      * Prints the weights in a file. Each line will contain a weight.
      */
-    void saveWeightsToFile(string suffix="");
-    /**
-     * Loads the weights saved in a file. Each line will contain a weight.
-     */
-    void loadWeights();
+    
     void saveCheckPoint(int episode, int totalNumberFrames,  vector<float>& episodeResults, int& frequency, vector<int>& episodeFrames, vector<double>& episodeFps);
     void loadCheckPoint(ifstream& checkPointToLoad);
-    void groupFeatures(vector<long long>& activeFeatures);
+    
+    
+    void translateFeatures(vector<long long>& activeFeatures);
+    
+    
 public:
     SarsaLearner(ALEInterface& ale, Features *features, Parameters *param,int seed);
     /**
@@ -120,3 +113,4 @@ public:
      */
     ~SarsaLearner();
 };
+#endif

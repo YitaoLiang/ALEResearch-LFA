@@ -6,11 +6,10 @@
 ** Author: Marlos C. Machado
 ***************************************************************************************/
 
-#ifndef PARAMETERS_H
-#define PARAMETERS_H
 #include "../common/Parameters.hpp"
-#endif
 
+#ifndef BACKGROUND_H
+#define BACKGROUND_H
 class Background{
 	private:
 		int width;
@@ -53,3 +52,4 @@ class Background{
 		*/
 		int getHeight();
 };
+#endif

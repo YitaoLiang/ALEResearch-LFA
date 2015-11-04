@@ -10,15 +10,12 @@
 #define ALE_INTERFACE_H
 #include <ale_interface.hpp>
 #endif
-#ifndef PARAMETERS_H
-#define PARAMETERS_H
-#include "../common/Parameters.hpp"
-#endif
-#ifndef FEATURES_H
-#define FEATURES_H
-#include "../features/Features.hpp"
-#endif
 
+#include "../common/Parameters.hpp"
+#include "../features/Features.hpp"
+
+#ifndef AGENT_H
+#define AGENT_H
 class Agent{
 	public:
 	   /**
@@ -54,3 +51,4 @@ class Agent{
 		*/
 		virtual ~Agent(){};
 };
+#endif

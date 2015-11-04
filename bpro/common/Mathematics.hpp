@@ -10,6 +10,8 @@
 #include <math.h>
 #include <random>
 
+#ifndef MATHEMATICS_H
+#define MATHEMATICS_H
 class Mathematics{
 public:
 	   /**
@@ -26,3 +28,4 @@ public:
     static int argmax(std::vector<float> array);
     static int argmax(std::vector<float>array,std::mt19937* randAgent);
 };
+#endif

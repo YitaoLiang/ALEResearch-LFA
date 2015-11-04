@@ -13,20 +13,10 @@
 #define ALE_INTERFACE_H
 #include <ale_interface.hpp>
 #endif
-#ifndef PARAMETERS_H
-#define PARAMETERS_H
-#include "common/Parameters.hpp"
-#endif
-#ifndef SARSA_H
-#define SARSA_H
-#include "agents/rl/sarsa/SarsaLearner.hpp"
-#endif
-#ifndef BASIC_H
-#define BASIC_H
-#include "features/BlobTimeFeatures.hpp"
-#endif
 
-//#include <random>
+#include "agents/rl/sarsa/SarsaLearner.hpp"
+#include "common/Parameters.hpp"
+#include "features/AdaptiveFeatures.hpp"
 
 void printBasicInfo(Parameters param){
 	printf("Seed: %d\n", param.getSeed());
@@ -48,7 +38,7 @@ int main(int argc, char** argv){
 	srand(param.getSeed());
 	
 	//Using Basic features:
-	BlobTimeFeatures features(&param);
+	AdaptiveFeatures features(&param);
 	//Reporting parameters read:
 	printBasicInfo(param);
 	
@@ -62,7 +52,6 @@ int main(int argc, char** argv){
 
 	ale.loadROM(param.getRomPath().c_str());
 
-    //mt19937 agentRand(param.getSeed());
 	//Instantiating the learning algorithm:
 	SarsaLearner sarsaLearner(ale, &features, &param, 2*param.getSeed()-1);
     //Learn a policy:

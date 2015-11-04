@@ -11,14 +11,6 @@
  ** Author: Marlos C. Machado
  ***************************************************************************************/
 
-#ifndef GRAPHICS_H
-#define GRAPHICS_H
-#include "Graphics.hpp"
-#endif
-#ifndef PARAMETERS_H
-#define PARAMETERS_H
-#include "Parameters.hpp"
-#endif
 #include <getopt.h>
 #include <string>
 #include <map>
@@ -27,6 +19,9 @@
 #include <assert.h>
 #include <sstream>
 #include <stdlib.h>
+
+#include "Parameters.hpp"
+#include "Graphics.hpp"
 
 void Parameters::printHelp(char** argv){
     printf("Usage:    %s[OPTIONS]\n", argv[0]);
@@ -245,6 +240,10 @@ void Parameters::parseParametersFromConfigFile(std::string cfgFileName){
     }else{
         this->setNoOpMax(0);
     }
+    
+    this->setPromoteThreshold(atof(parameters["PROMOTE_THRESHOLD"].c_str()));
+    this->setDemoteThreshold(atof(parameters["DEMOTE_THRESHOLD"].c_str()));
+    this->setNumPromotions(atoi(parameters["PROMOTION_NUMBER"].c_str()));
 }
 
 void Parameters::setSaveTrajectoryPath(std::string name){
@@ -575,4 +574,28 @@ int Parameters::getRandomNoOp(){
 
 int Parameters::getNoOpMax(){
     return this->noOpMax;
+}
+
+void Parameters::setPromoteThreshold(float a){
+    this->promoteThreshold = a;
+}
+
+float Parameters::getPromoteThreshold(){
+    return this->promoteThreshold;
+}
+
+void Parameters::setDemoteThreshold(float a){
+    this->demoteThreshold = a;
+}
+
+float Parameters::getDemoteThreshold(){
+    return this->demoteThreshold;
+}
+
+void Parameters::setNumPromotions(int a){
+    this->numPromotions = a;
+}
+
+int Parameters::getNumPromotions(){
+    return this->numPromotions;
 }

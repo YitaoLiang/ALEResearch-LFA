@@ -6,13 +6,12 @@
  ** Author: Marlos C. Machado
  ***************************************************************************************/
 
-#ifndef AGENT_H
-#define AGENT_H
 #include "../Agent.hpp"
-#endif
 #include <random>
 using namespace std;
 
+#ifndef RLLEARNER_H
+#define RLLEARNER_H
 class RLLearner : public Agent{
 protected:
     ActionVect actions;
@@ -99,3 +98,4 @@ public:
      */
     virtual ~RLLearner(){};
 };
+#endif

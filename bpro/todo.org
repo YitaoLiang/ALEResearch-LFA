@@ -15,7 +15,35 @@ Adaptive Feature Representation -*- mode: org -*-
 * How to preprocess the screen
   - location -> color 
   - color -> locations
+  - Sparcify input: use blobs instead raw pixels
 
 * Generate candidate features 
-  - 
-  
+  - Refine the resolution of the anchor pixel
+  - Add a new offset
+  - Refine the resolution of an offset
+
+* Promote a candidate to an actual feature
+   - IFDD+ idea:: absolute value of delta sum / square root of times of appearance
+   - Another approach: 
+   - Reset sum and times of appearnce after promotion
+
+* Demote an actual feature
+  - Generate and Test:: when both weight and auto step size are small
+  - get rid of the candidate features based on this
+
+* How to store features
+  - As candidate features are built based on some base featuers
+  - Use tree strucutre to capture this relationship in order to save getActiveFeature time
+  - If a base feature is not active, then all feature that are generated based on this one cannot be active either
+  -
+
+
+
+* Import implementation issues
+  - Better way to traverse features instead of using recursion
+  - Redundancy in features (will it be a problem?) 
+  - offset negative zero and positive zero (negative/positive provides information about direction; however, when it's zero that inforamtion is lost)
+    -> solution: round instead of truncating
+  - Auto step size (should each action has its own, or not?)
+     1. each action's feature weights is updated seperately -> a feature should have seperate step size for each action
+     2. However, in terms of feature demotion. The whole feature (the feature in every action) is demoted -> a feature just has one step size
