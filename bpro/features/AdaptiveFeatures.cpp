@@ -78,14 +78,6 @@ AdaptiveFeatures::~AdaptiveFeatures(){
         delete f;
     }
     
-    for (int color = 0;color<numColors;++color){
-        for (int row= 0;row<210;++row){
-            delete[] blobs[color][row];
-        }
-        delete[] blobs[color];
-    }
-    delete[] blobs;
-    
     delete fullNeighbors;
     delete extraNeighbors;
 }
