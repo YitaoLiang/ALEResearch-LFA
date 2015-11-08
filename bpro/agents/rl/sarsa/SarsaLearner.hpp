@@ -11,10 +11,7 @@
 
 #include "../RLLearner.hpp"
 #include <vector>
-#include <unordered_map>
-//#include <sparsehash/dense_hash_map>
 using namespace std;
-//using google::dense_hash_map;
 
 #ifndef SARSA_LEARNER_H
 #define SARSA_LEARNER_H
@@ -35,9 +32,6 @@ private:
     int randomNoOp;
     int noOpMax;
     int numStepsPerAction;
-    float promoteThreshold;
-    float demoteThreshold;
-    int numPromotions;
     
     vector<long long> F;					//Set of features active
     vector<long long> Fnext;              //Set of features active in next state
@@ -47,7 +41,6 @@ private:
     vector<vector<float> > w;     //Theta, weights vector
     vector<float> stepSize; //
     vector<vector<long long> >nonZeroElig;//To optimize the implementation
-    unordered_map<long long,long long> featureTranslate;
     
     /**
      * Constructor declared as private to force the user to instantiate SarsaLearner
@@ -86,7 +79,7 @@ private:
     void loadCheckPoint(ifstream& checkPointToLoad);
     
     
-    void translateFeatures(vector<long long>& activeFeatures);
+    void translateFeatures(vector<long long>& activeFeatures, Features* features);
     
     
 public:

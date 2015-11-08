@@ -240,10 +240,8 @@ void Parameters::parseParametersFromConfigFile(std::string cfgFileName){
     }else{
         this->setNoOpMax(0);
     }
-    
-    this->setPromoteThreshold(atof(parameters["PROMOTE_THRESHOLD"].c_str()));
-    this->setDemoteThreshold(atof(parameters["DEMOTE_THRESHOLD"].c_str()));
     this->setNumPromotions(atoi(parameters["PROMOTION_NUMBER"].c_str()));
+    this->setPromotionFrequency(atoll(parameters["PROMOTION_FREQUENCY"].c_str()));
 }
 
 void Parameters::setSaveTrajectoryPath(std::string name){
@@ -576,26 +574,18 @@ int Parameters::getNoOpMax(){
     return this->noOpMax;
 }
 
-void Parameters::setPromoteThreshold(float a){
-    this->promoteThreshold = a;
-}
-
-float Parameters::getPromoteThreshold(){
-    return this->promoteThreshold;
-}
-
-void Parameters::setDemoteThreshold(float a){
-    this->demoteThreshold = a;
-}
-
-float Parameters::getDemoteThreshold(){
-    return this->demoteThreshold;
-}
-
 void Parameters::setNumPromotions(int a){
     this->numPromotions = a;
 }
 
 int Parameters::getNumPromotions(){
     return this->numPromotions;
+}
+
+void Parameters::setPromotionFrequency(long long a){
+    this->promotionFrequency = a;
+}
+
+long long Parameters::getPromotionFrequency(){
+    return this->promotionFrequency;
 }

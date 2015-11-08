@@ -61,12 +61,13 @@ class AdaptiveFeatures : public Features::Features{
 		Parameters *param;
         Background *background;
         int numColors, colorMultiplier;
-        float promoteThreshold;
+        int numPromotions;
+        long long promotionFrequency, numberOfFramesToPromotion;
         long long numFeatures;
-        bool *** blobs;
+        vector<vector<tuple<int,int> > > blobs;
         vector<Feature*> baseFeatures;
         unordered_map<long long, Feature*> indexToFeature;
-        vector<tuple<int,int> > allPositions;
+        Feature* rootFeature;
     
         void constructBaseFeatures();
         void getBlobs(const ALEScreen& screen);
@@ -109,7 +110,9 @@ class AdaptiveFeatures : public Features::Features{
  		* @return nothing as one will receive the requested data by the last parameter, by reference.
  		*/
         virtual void getActiveFeaturesIndices(const ALEScreen &screen, const ALERAM &ram, vector<long long>& activeFeatures);
-        void promoteFeatures(float delta,int numPromotions);
+        void update(float delta);
+        void promoteFeatures(long long frames);
+        long long getNumFeatures();
         //void demoteFeature(long long index);
 };
 #endif

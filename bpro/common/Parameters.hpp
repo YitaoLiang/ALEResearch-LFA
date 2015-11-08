@@ -61,9 +61,8 @@ private:
     int finalNumberOfBlobs;
     int randomNoOp;
     int noOpMax;
-    float promoteThreshold;
-    float demoteThreshold;
     int numPromotions;
+    long long promotionFrequency;
     
     std::mt19937 agentRand;
     
@@ -240,9 +239,8 @@ private:
     void setFinalNumberOfBlobs(int a);
     void setRandomNoOp(int a);
     void setNoOpMax(int a);
-    void setPromoteThreshold(float a);
-    void setDemoteThreshold(float a);
     void setNumPromotions(int a);
+    void setPromotionFrequency(long long a);
     
 public:
     /**
@@ -387,8 +385,7 @@ public:
     std::mt19937* getRNG();
     int getRandomNoOp();
     int getNoOpMax();
-    float getPromoteThreshold();
-    float getDemoteThreshold();
     int getNumPromotions();
+    long long getPromotionFrequency();
 };
 #endif
