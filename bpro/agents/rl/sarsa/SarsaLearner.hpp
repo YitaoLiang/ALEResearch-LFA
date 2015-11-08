@@ -37,10 +37,7 @@ private:
     vector<long long> Fnext;              //Set of features active in next state
     vector<float> Q;               //Q(a) entries
     vector<float> Qnext;           //Q(a) entries for next action
-    vector<vector<float> > e;       //Eligibility trace
     vector<vector<float> > w;     //Theta, weights vector
-    vector<float> stepSize; //
-    vector<vector<long long> >nonZeroElig;//To optimize the implementation
     
     /**
      * Constructor declared as private to force the user to instantiate SarsaLearner
@@ -59,28 +56,10 @@ private:
      * that are active in F.
      */
     void updateQValues(vector<long long> &Features, vector<float> &QValues);
-    /**
-     * When using Replacing traces, all values not related to the current action are set to 0, while the
-     * values for the current action that their features are active are set to 1. The traces decay following
-     * the rule: e[action][i] = gamma * lambda * e[action][i]. It is possible to also define thresholding.
-     */
-    void updateReplTrace(int action, vector<long long> &Features);
-    /**
-     * When using Replacing traces, all values not related to the current action are set to 0, while the
-     * values for the current action that their features are active are added 1. The traces decay following
-     * the rule: e[action][i] = gamma * lambda * e[action][i]. It is possible to also define thresholding.
-     */
-    void updateAcumTrace(int action, vector<long long> &Features);
-    /**
-     * Prints the weights in a file. Each line will contain a weight.
-     */
+   
     
     void saveCheckPoint(int episode, int totalNumberFrames,  vector<float>& episodeResults, int& frequency, vector<int>& episodeFrames, vector<double>& episodeFps);
     void loadCheckPoint(ifstream& checkPointToLoad);
-    
-    
-    void translateFeatures(vector<long long>& activeFeatures, Features* features);
-    
     
 public:
     SarsaLearner(ALEInterface& ale, Features *features, Parameters *param,int seed);

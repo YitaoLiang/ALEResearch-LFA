@@ -29,7 +29,6 @@ SarsaLearner::SarsaLearner(ALEInterface& ale, Features *features, Parameters *pa
     alpha = param->getAlpha();
     learningRate = alpha;
     lambda = param->getLambda();
-    //numGroups = 0;
     traceThreshold = param->getTraceThreshold();
     toSaveCheckPoint = param->getToSaveCheckPoint();
     saveWeightsEveryXFrames = param->getFrequencySavingWeights();
@@ -42,10 +41,8 @@ SarsaLearner::SarsaLearner(ALEInterface& ale, Features *features, Parameters *pa
         //Initialize Q;
         Q.push_back(0);
         Qnext.push_back(0);
-        //Initialize e:
-        e.push_back(vector<float>());
+        //Initialize w:
         w.push_back(vector<float>());
-        nonZeroElig.push_back(vector<long long>());
     }
     episodePassed = 0;
     if(toSaveCheckPoint){
@@ -82,70 +79,6 @@ void SarsaLearner::updateQValues(vector<long long> &activeFeatures, vector<float
     }
 }
 
-void SarsaLearner::updateReplTrace(int action, vector<long long> &Features){
-    //e <- gamma * lambda * e
-    for(unsigned int a = 0; a < nonZeroElig.size(); a++){
-        long long numNonZero = 0;
-        for(unsigned long long i = 0; i < nonZeroElig[a].size(); i++){
-            long long idx = nonZeroElig[a][i];
-            //To keep the trace sparse, if it is
-            //less than a threshold it is zero-ed.
-            e[a][idx] = gamma * lambda * e[a][idx];
-            if(e[a][idx] < traceThreshold){
-                e[a][idx] = 0;
-            }
-            else{
-                nonZeroElig[a][numNonZero] = idx;
-                numNonZero++;
-            }
-        }
-        nonZeroElig[a].resize(numNonZero);
-    }
-    
-    //For all i in Fa:
-    for(unsigned int i = 0; i < F.size(); i++){
-        long long idx = Features[i];
-        //If the trace is zero it is not in the vector
-        //of non-zeros, thus it needs to be added
-        if(e[action][idx] == 0){
-            nonZeroElig[action].push_back(idx);
-        }
-        e[action][idx] = 1;
-    }
-}
-
-void SarsaLearner::updateAcumTrace(int action, vector<long long> &Features){
-    //e <- gamma * lambda * e
-    for(unsigned int a = 0; a < nonZeroElig.size(); a++){
-        long long numNonZero = 0;
-        for(unsigned int i = 0; i < nonZeroElig[a].size(); i++){
-            long long idx = nonZeroElig[a][i];
-            //To keep the trace sparse, if it is
-            //less than a threshold it is zero-ed.
-            e[a][idx] = gamma * lambda * e[a][idx];
-            if(e[a][idx] < traceThreshold){
-                e[a][idx] = 0;
-            }
-            else{
-                nonZeroElig[a][numNonZero] = idx;
-                numNonZero++;
-            }
-        }
-        nonZeroElig[a].resize(numNonZero);
-    }
-    
-    //For all i in Fa:
-    for(unsigned int i = 0; i < F.size(); i++){
-        long long idx = Features[i];
-        //If the trace is zero it is not in the vector
-        //of non-zeros, thus it needs to be added
-        if(e[action][idx] == 0){
-            nonZeroElig[action].push_back(idx);
-        }
-        e[action][idx] += 1;
-    }
-}
-
 void SarsaLearner::sanityCheck(){
     for(int i = 0; i < numActions; i++){
         if(fabs(Q[i]) > 10e7 || Q[i] != Q[i] /*NaN*/){
@@ -154,6 +87,156 @@ void SarsaLearner::sanityCheck(){
         }
     }
 }
+
+void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
+    
+    struct timeval tvBegin, tvEnd, tvDiff;
+    vector<float> reward;
+    double elapsedTime;
+    double cumReward = 0, prevCumReward = 0;
+    sawFirstReward = 0; firstReward = 1.0;
+    vector<float> episodeResults;
+    vector<int> episodeFrames;
+    vector<double> episodeFps;
+    
+    features->updateWeights(w,learningRate);
+    //Repeat (for each episode):
+    //This is going to be interrupted by the ALE code since I set max_num_frames beforehand
+    for(int episode = episodePassed+1; totalNumberFrames < totalNumberOfFramesToLearn; episode++){
+        //random no-op
+        unsigned int noOpNum = 0;
+        if (randomNoOp){
+            noOpNum = (*agentRand)()%(noOpMax)+1;
+            for (int i=0;i<noOpNum;++i){
+                ale.act(actions[0]);
+            }
+        }
+
+        
+        F.clear();
+        features->getActiveFeaturesIndices(ale.getScreen(), ale.getRAM(), F);
+        updateQValues(F, Q);
+        
+        currentAction = epsilonGreedy(Q,episode);
+        gettimeofday(&tvBegin, NULL);
+        int lives = ale.lives();
+        //Repeat(for each step of episode) until game is over:
+        //This also stops when the maximum number of steps per episode is reached
+        while(!ale.game_over()){
+            reward.clear();
+            reward.push_back(0.0);
+            reward.push_back(0.0);
+            updateQValues(F, Q);
+            
+            sanityCheck();
+            //Take action, observe reward and next state:
+            act(ale, currentAction, reward);
+            cumReward  += reward[1];
+            if(!ale.game_over()){
+                //Obtain active features in the new state:
+                Fnext.clear();
+                features->getActiveFeaturesIndices(ale.getScreen(), ale.getRAM(), Fnext);
+                updateQValues(Fnext, Qnext);     //Update Q-values for the new active features
+                nextAction = epsilonGreedy(Qnext,episode);
+            }
+            else{
+                nextAction = 0;
+                for(unsigned int i = 0; i < Qnext.size(); i++){
+                    Qnext[i] = 0;
+                }
+            }
+            //To ensure the learning rate will never increase along
+            //the time, Marc used such approach in his JAIR paper
+            if (F.size() > maxFeatVectorNorm){
+                maxFeatVectorNorm = F.size();
+                learningRate = alpha/maxFeatVectorNorm;
+            }
+            delta = reward[0] + gamma * Qnext[nextAction] - Q[currentAction];
+            
+            //updeta features' sum of delta
+            features->updateDelta(delta,currentAction);
+            
+            F = Fnext;
+            currentAction = nextAction;
+        }
+        gettimeofday(&tvEnd, NULL);
+        timeval_subtract(&tvDiff, &tvEnd, &tvBegin);
+        elapsedTime = double(tvDiff.tv_sec) + double(tvDiff.tv_usec)/1000000.0;
+        
+        double fps = double(ale.getEpisodeFrameNumber())/elapsedTime;
+        printf("episode: %d,\t%.0f points,\tavg. return: %.1f,\t%d frames,\t%.0f fps\n",
+               episode, cumReward - prevCumReward, (double)cumReward/(episode),
+               ale.getEpisodeFrameNumber(), fps);
+        episodeResults.push_back(cumReward-prevCumReward);
+        episodeFrames.push_back(ale.getEpisodeFrameNumber());
+        episodeFps.push_back(fps);
+        totalNumberFrames += ale.getEpisodeFrameNumber()-noOpNum*numStepsPerAction;
+        prevCumReward = cumReward;
+        ale.reset_game();
+        
+        //promote features
+        if (features->promoteFeatures(totalNumberFrames)){
+            features->updateWeights(w,learningRate);
+        }
+        
+        //save checkPoint
+        if(toSaveCheckPoint && totalNumberFrames>saveThreshold){
+            saveCheckPoint(episode,totalNumberFrames,episodeResults,saveWeightsEveryXFrames,episodeFrames,episodeFps);
+            saveThreshold+=saveWeightsEveryXFrames;
+        }
+    }
+}
+
+void SarsaLearner::evaluatePolicy(ALEInterface& ale, Features *features){
+    double reward = 0;
+    double cumReward = 0;
+    double prevCumReward = 0;
+    struct timeval tvBegin, tvEnd, tvDiff;
+    double elapsedTime;
+    
+    std::string oldName = checkPointName+"-Result-writing.txt";
+    std::string newName = checkPointName+"-Result-finished.txt";
+    std::ofstream resultFile;
+    resultFile.open(oldName.c_str());
+    
+    //Repeat (for each episode):
+    for(int episode = 1; episode < numEpisodesEval; episode++){
+        //Repeat(for each step of episode) until game is over:
+        gettimeofday(&tvBegin, NULL);
+        //random no-op
+        unsigned int noOpNum;
+        if (randomNoOp){
+            noOpNum = (*agentRand)()%(noOpMax)+1;
+            for (int i=0;i<noOpNum;++i){
+                ale.act(actions[0]);
+            }
+        }
+        for(int step = 0; !ale.game_over() && step < episodeLength; step++){
+            //Get state and features active on that state:
+            F.clear();
+            features->getActiveFeaturesIndices(ale.getScreen(), ale.getRAM(), F);
+            updateQValues(F, Q);       //Update Q-values for each possible action
+            currentAction = epsilonGreedy(Q);
+            //Take action, observe reward and next state:
+            reward = ale.act(actions[currentAction]);
+            cumReward  += reward;
+        }
+        gettimeofday(&tvEnd, NULL);
+        timeval_subtract(&tvDiff, &tvEnd, &tvBegin);
+        elapsedTime = double(tvDiff.tv_sec) + double(tvDiff.tv_usec)/1000000.0;
+        double fps = double(ale.getEpisodeFrameNumber())/elapsedTime;
+        
+        resultFile<<"Episode "<<episode<<": "<<cumReward-prevCumReward<<std::endl;
+        printf("episode: %d,\t%.0f points,\tavg. return: %.1f,\t%d frames,\t%.0f fps\n",
+               episode, (cumReward-prevCumReward), (double)cumReward/(episode), ale.getEpisodeFrameNumber(), fps);
+        ale.reset_game();
+        prevCumReward = cumReward;
+    }
+    resultFile<<"Average: "<<(double)cumReward/numEpisodesEval<<std::endl;
+    resultFile.close();
+    rename(oldName.c_str(),newName.c_str());
+}
+
 
 //To do: we do not want to save weights that are zero
 void SarsaLearner::saveCheckPoint(int episode, int totalNumberFrames, vector<float>& episodeResults,int& frequency,vector<int>& episodeFrames, vector<double>& episodeFps){
@@ -209,184 +292,4 @@ void SarsaLearner::loadCheckPoint(ifstream& checkPointToLoad){
     long long numberOfFeaturesSeen;
     checkPointToLoad >> numberOfFeaturesSeen;
     checkPointToLoad.close();
-}
-
-void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
-    
-    struct timeval tvBegin, tvEnd, tvDiff;
-    vector<float> reward;
-    double elapsedTime;
-    double cumReward = 0, prevCumReward = 0;
-    sawFirstReward = 0; firstReward = 1.0;
-    vector<float> episodeResults;
-    vector<int> episodeFrames;
-    vector<double> episodeFps;
-    
-    long long trueFeatureSize = 0;
-    long long trueFnextSize = 0;
-    
-    //Repeat (for each episode):
-    //This is going to be interrupted by the ALE code since I set max_num_frames beforehand
-    for(int episode = episodePassed+1; totalNumberFrames < totalNumberOfFramesToLearn; episode++){
-        //random no-op
-        unsigned int noOpNum = 0;
-        if (randomNoOp){
-            noOpNum = (*agentRand)()%(noOpMax)+1;
-            for (int i=0;i<noOpNum;++i){
-                ale.act(actions[0]);
-            }
-        }
-        
-        //We have to clean the traces every episode:
-        for(unsigned int a = 0; a < nonZeroElig.size(); a++){
-            for(unsigned long long i = 0; i < nonZeroElig[a].size(); i++){
-                long long idx = nonZeroElig[a][i];
-                e[a][idx] = 0.0;
-            }
-            nonZeroElig[a].clear();
-        }
-        
-        F.clear();
-        features->getActiveFeaturesIndices(ale.getScreen(), ale.getRAM(), F);
-        translateFeatures(F,features);
-        trueFeatureSize = F.size();
-        updateQValues(F, Q);
-        
-        currentAction = epsilonGreedy(Q,episode);
-        gettimeofday(&tvBegin, NULL);
-        int lives = ale.lives();
-        //Repeat(for each step of episode) until game is over:
-        //This also stops when the maximum number of steps per episode is reached
-        while(!ale.game_over()){
-            reward.clear();
-            reward.push_back(0.0);
-            reward.push_back(0.0);
-            updateQValues(F, Q);
-            updateReplTrace(currentAction, F);
-            
-            sanityCheck();
-            //Take action, observe reward and next state:
-            act(ale, currentAction, reward);
-            cumReward  += reward[1];
-            if(!ale.game_over()){
-                //Obtain active features in the new state:
-                Fnext.clear();
-                features->getActiveFeaturesIndices(ale.getScreen(), ale.getRAM(), Fnext);
-                translateFeatures(Fnext,features);
-                trueFnextSize = Fnext.size();
-                updateQValues(Fnext, Qnext);     //Update Q-values for the new active features
-                nextAction = epsilonGreedy(Qnext,episode);
-            }
-            else{
-                nextAction = 0;
-                for(unsigned int i = 0; i < Qnext.size(); i++){
-                    Qnext[i] = 0;
-                }
-            }
-            //To ensure the learning rate will never increase along
-            //the time, Marc used such approach in his JAIR paper
-            if (trueFeatureSize > maxFeatVectorNorm){
-                maxFeatVectorNorm = trueFeatureSize;
-                learningRate = alpha/maxFeatVectorNorm;
-            }
-            delta = reward[0] + gamma * Qnext[nextAction] - Q[currentAction];
-            //cout<<reward[0]<<' '<<delta<<endl;
-            //Update weights vector:
-            for(unsigned int a = 0; a < nonZeroElig.size(); a++){
-                for(unsigned int i = 0; i < nonZeroElig[a].size(); i++){
-                    long long idx = nonZeroElig[a][i];
-                    w[a][idx] = w[a][idx] + learningRate * delta * e[a][idx];
-                }
-            }
-            
-            //updeta features' sum of delta
-            features->update(delta);
-            
-            F = Fnext;
-            trueFeatureSize = trueFnextSize;
-            currentAction = nextAction;
-        }
-        gettimeofday(&tvEnd, NULL);
-        timeval_subtract(&tvDiff, &tvEnd, &tvBegin);
-        elapsedTime = double(tvDiff.tv_sec) + double(tvDiff.tv_usec)/1000000.0;
-        
-        double fps = double(ale.getEpisodeFrameNumber())/elapsedTime;
-        printf("episode: %d,\t%.0f points,\tavg. return: %.1f,\t%d frames,\t%.0f fps\n",
-               episode, cumReward - prevCumReward, (double)cumReward/(episode),
-               ale.getEpisodeFrameNumber(), fps);
-        episodeResults.push_back(cumReward-prevCumReward);
-        episodeFrames.push_back(ale.getEpisodeFrameNumber());
-        episodeFps.push_back(fps);
-        totalNumberFrames += ale.getEpisodeFrameNumber()-noOpNum*numStepsPerAction;
-        //promote features
-        features->promoteFeatures(totalNumberFrames);
-        prevCumReward = cumReward;
-        ale.reset_game();
-        if(toSaveCheckPoint && totalNumberFrames>saveThreshold){
-            saveCheckPoint(episode,totalNumberFrames,episodeResults,saveWeightsEveryXFrames,episodeFrames,episodeFps);
-            saveThreshold+=saveWeightsEveryXFrames;
-        }
-    }
-}
-
-void SarsaLearner::evaluatePolicy(ALEInterface& ale, Features *features){
-    double reward = 0;
-    double cumReward = 0;
-    double prevCumReward = 0;
-    struct timeval tvBegin, tvEnd, tvDiff;
-    double elapsedTime;
-    
-    std::string oldName = checkPointName+"-Result-writing.txt";
-    std::string newName = checkPointName+"-Result-finished.txt";
-    std::ofstream resultFile;
-    resultFile.open(oldName.c_str());
-    
-    //Repeat (for each episode):
-    for(int episode = 1; episode < numEpisodesEval; episode++){
-        //Repeat(for each step of episode) until game is over:
-        gettimeofday(&tvBegin, NULL);
-        //random no-op
-        unsigned int noOpNum;
-        if (randomNoOp){
-            noOpNum = (*agentRand)()%(noOpMax)+1;
-            for (int i=0;i<noOpNum;++i){
-                ale.act(actions[0]);
-            }
-        }
-        for(int step = 0; !ale.game_over() && step < episodeLength; step++){
-            //Get state and features active on that state:
-            F.clear();
-            features->getActiveFeaturesIndices(ale.getScreen(), ale.getRAM(), F);
-            translateFeatures(F,features);
-            updateQValues(F, Q);       //Update Q-values for each possible action
-            currentAction = epsilonGreedy(Q);
-            //Take action, observe reward and next state:
-            reward = ale.act(actions[currentAction]);
-            cumReward  += reward;
-        }
-        gettimeofday(&tvEnd, NULL);
-        timeval_subtract(&tvDiff, &tvEnd, &tvBegin);
-        elapsedTime = double(tvDiff.tv_sec) + double(tvDiff.tv_usec)/1000000.0;
-        double fps = double(ale.getEpisodeFrameNumber())/elapsedTime;
-        
-        resultFile<<"Episode "<<episode<<": "<<cumReward-prevCumReward<<std::endl;
-        printf("episode: %d,\t%.0f points,\tavg. return: %.1f,\t%d frames,\t%.0f fps\n",
-               episode, (cumReward-prevCumReward), (double)cumReward/(episode), ale.getEpisodeFrameNumber(), fps);
-        ale.reset_game();
-        prevCumReward = cumReward;
-    }
-    resultFile<<"Average: "<<(double)cumReward/numEpisodesEval<<std::endl;
-    resultFile.close();
-    rename(oldName.c_str(),newName.c_str());
-    
-}
-
-void SarsaLearner::translateFeatures(vector<long long>& activeFeatures, Features* features){
-    auto m = features->getNumFeatures()+1;
-    if (w[0].size()<m){
-        for (int a=0;a<numActions;++a){
-            e[a].resize(m,0.0);
-            w[a].resize(m,0.0);
-        }
-    }
 }

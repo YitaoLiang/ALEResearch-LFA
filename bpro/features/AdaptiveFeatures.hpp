@@ -33,16 +33,14 @@ struct Feature{
     Location location;
     vector<Location> offsets;
     bool extraOffset;
-    int numAppearance;
-    float sumDelta;
+    vector<float> sumDelta;
     bool active;
     vector<Feature*> children;
-     Feature(int index, int color,int a, int b, int c, int d){
+     Feature(int index, int color,int a, int b, int c, int d,int numActions){
         this->featureIndex = index;
         this->location = Location(color,a,b,c,d);
-        this->numAppearance = 0;
-        this->sumDelta = 0;
         this->extraOffset = false;
+        sumDelta.resize(numActions,0.0);
     }
 };
 
@@ -61,6 +59,7 @@ class AdaptiveFeatures : public Features::Features{
 		Parameters *param;
         Background *background;
         int numColors, colorMultiplier;
+        int numActions; 
         int numPromotions;
         long long promotionFrequency, numberOfFramesToPromotion;
         long long numFeatures;
@@ -91,7 +90,7 @@ class AdaptiveFeatures : public Features::Features{
  		*                   number of colors and the background information
  		* @return nothing, it is a constructor.
  		*/
-		AdaptiveFeatures(Parameters *param);
+		AdaptiveFeatures(ALEInterface& ale,Parameters *param);
 		/**
  		* This method is the instantiation of the virtual method in the class Features (also check
  		* its documentation). It iterates over all tiles defined by the columns and rows and checks
@@ -110,9 +109,9 @@ class AdaptiveFeatures : public Features::Features{
  		* @return nothing as one will receive the requested data by the last parameter, by reference.
  		*/
         virtual void getActiveFeaturesIndices(const ALEScreen &screen, const ALERAM &ram, vector<long long>& activeFeatures);
-        void update(float delta);
-        void promoteFeatures(long long frames);
-        long long getNumFeatures();
+        void updateDelta(float delta, int a);
+        bool promoteFeatures(long long frames);
+        void updateWeights(vector<vector<float> >& weights,float learningRate);
         //void demoteFeature(long long index);
 };
 #endif

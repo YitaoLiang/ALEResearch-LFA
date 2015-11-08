@@ -52,8 +52,8 @@ class Features{
 		* Destructor, not necessary in this class.
 		*/
 		virtual ~Features();
-        virtual long long getNumFeatures() = 0;
-        virtual void promoteFeatures(long long frames) = 0;
-        virtual void update(float delta) = 0;
+        virtual bool promoteFeatures(long long frames) = 0;
+        virtual void updateDelta(float delta,int currentAction) = 0;
+        virtual void updateWeights(vector<vector<float> >& weights, float learningRate) =0;
 };
 #endif
