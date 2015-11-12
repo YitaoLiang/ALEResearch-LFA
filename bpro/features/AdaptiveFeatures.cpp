@@ -226,7 +226,6 @@ void AdaptiveFeatures::promoteFeatures(){
             bestCandidates[i]->featureIndex = numFeatures;
             ++numFeatures;
             generateCandidateFeatures(bestCandidates[i]);
-            ++s;
         }
     }
 }
