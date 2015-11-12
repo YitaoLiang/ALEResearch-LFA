@@ -32,12 +32,16 @@ private:
     int randomNoOp;
     int noOpMax;
     int numStepsPerAction;
+    long long promotionFrequency,numberOfFramesToPromotion;
+    
     
     vector<long long> F;					//Set of features active
     vector<long long> Fnext;              //Set of features active in next state
     vector<float> Q;               //Q(a) entries
     vector<float> Qnext;           //Q(a) entries for next action
     vector<vector<float> > w;     //Theta, weights vector
+    vector<vector<float> > e;
+    vector<vector<long long> >nonZeroElig;//To optimize the implementation
     
     /**
      * Constructor declared as private to force the user to instantiate SarsaLearner
@@ -84,5 +88,6 @@ public:
      * Destructor, not necessary in this class.
      */
     ~SarsaLearner();
+    void updateReplTrace(int action, vector<long long> &Features);
 };
 #endif

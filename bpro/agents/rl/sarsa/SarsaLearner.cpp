@@ -36,6 +36,8 @@ SarsaLearner::SarsaLearner(ALEInterface& ale, Features *features, Parameters *pa
     randomNoOp = param->getRandomNoOp();
     noOpMax = param->getNoOpMax();
     numStepsPerAction = param->getNumStepsPerAction();
+    promotionFrequency = param->getPromotionFrequency();
+    numberOfFramesToPromotion = promotionFrequency;
     
     for(int i = 0; i < numActions; i++){
         //Initialize Q;
@@ -43,6 +45,8 @@ SarsaLearner::SarsaLearner(ALEInterface& ale, Features *features, Parameters *pa
         Qnext.push_back(0);
         //Initialize w:
         w.push_back(vector<float>());
+        e.push_back(vector<float>());
+        nonZeroElig.push_back(vector<long long>());
     }
     episodePassed = 0;
     if(toSaveCheckPoint){
@@ -82,9 +86,45 @@ void SarsaLearner::updateQValues(vector<long long> &activeFeatures, vector<float
 void SarsaLearner::sanityCheck(){
     for(int i = 0; i < numActions; i++){
         if(fabs(Q[i]) > 10e7 || Q[i] != Q[i] /*NaN*/){
+            cout<<Q[i]<<endl;
+            for (auto weight: w[0]){
+                cout<<weight<<endl;
+            }
             printf("It seems your algorithm diverged!\n");
             exit(0);
         }
+    }
+}
+
+void SarsaLearner::updateReplTrace(int action, vector<long long> &Features){
+    //e <- gamma * lambda * e
+    for(unsigned int a = 0; a < nonZeroElig.size(); a++){
+        long long numNonZero = 0;
+        for(unsigned long long i = 0; i < nonZeroElig[a].size(); i++){
+            long long idx = nonZeroElig[a][i];
+            //To keep the trace sparse, if it is
+            //less than a threshold it is zero-ed.
+            e[a][idx] = gamma * lambda * e[a][idx];
+            if(e[a][idx] < traceThreshold){
+                e[a][idx] = 0;
+            }
+            else{
+                nonZeroElig[a][numNonZero] = idx;
+                numNonZero++;
+            }
+        }
+        nonZeroElig[a].resize(numNonZero);
+    }
+    
+    //For all i in Fa:
+    for(unsigned int i = 0; i < F.size(); i++){
+        long long idx = Features[i];
+        //If the trace is zero it is not in the vector
+        //of non-zeros, thus it needs to be added
+        if(e[action][idx] == 0){
+            nonZeroElig[action].push_back(idx);
+        }
+        e[action][idx] = 1;
     }
 }
 
@@ -99,7 +139,12 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
     vector<int> episodeFrames;
     vector<double> episodeFps;
     
-    features->updateWeights(w,learningRate);
+    long long numFeatures = features->getNumFeatures();
+    for (int a=0;a<numActions;++a){
+        w[a].resize(numFeatures,0.0);
+        e[a].resize(numFeatures,0.0);
+    }
+    
     //Repeat (for each episode):
     //This is going to be interrupted by the ALE code since I set max_num_frames beforehand
     for(int episode = episodePassed+1; totalNumberFrames < totalNumberOfFramesToLearn; episode++){
@@ -111,13 +156,22 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
                 ale.act(actions[0]);
             }
         }
+        
+        //We have to clean the traces every episode:
+        for(unsigned int a = 0; a < nonZeroElig.size(); a++){
+            for(unsigned long long i = 0; i < nonZeroElig[a].size(); i++){
+                long long idx = nonZeroElig[a][i];
+                e[a][idx] = 0.0;
+            }
+            nonZeroElig[a].clear();
+        }
 
         
         F.clear();
         features->getActiveFeaturesIndices(ale.getScreen(), ale.getRAM(), F);
         updateQValues(F, Q);
-        
         currentAction = epsilonGreedy(Q,episode);
+
         gettimeofday(&tvBegin, NULL);
         int lives = ale.lives();
         //Repeat(for each step of episode) until game is over:
@@ -127,6 +181,7 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
             reward.push_back(0.0);
             reward.push_back(0.0);
             updateQValues(F, Q);
+            updateReplTrace(currentAction, F);
             
             sanityCheck();
             //Take action, observe reward and next state:
@@ -153,8 +208,18 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
             }
             delta = reward[0] + gamma * Qnext[nextAction] - Q[currentAction];
             
+            //Update weights vector:
+            for(unsigned int a = 0; a < nonZeroElig.size(); a++){
+                for(unsigned int i = 0; i < nonZeroElig[a].size(); i++){
+                    long long idx = nonZeroElig[a][i];
+                    w[a][idx] = w[a][idx] + learningRate * delta * e[a][idx];
+                }
+            }
+            
             //updeta features' sum of delta
-            features->updateDelta(delta,currentAction);
+            if (delta!=0){
+                features->updateDelta(delta);
+            }
             
             F = Fnext;
             currentAction = nextAction;
@@ -174,9 +239,20 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
         prevCumReward = cumReward;
         ale.reset_game();
         
+        //reset active
+        features->resetActive();
+        
         //promote features
-        if (features->promoteFeatures(totalNumberFrames)){
-            features->updateWeights(w,learningRate);
+        if (totalNumberFrames>=numberOfFramesToPromotion){
+            //features->updateWeights(w,learningRate);
+            features->promoteFeatures();
+            features->resetDelta();
+            numFeatures = features->getNumFeatures();
+            for (int a=0;a<numActions;++a){
+                w[a].resize(numFeatures,0.0);
+                e[a].resize(numFeatures,0.0);
+            }
+            numberOfFramesToPromotion+=promotionFrequency;
         }
         
         //save checkPoint

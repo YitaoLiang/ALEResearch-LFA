@@ -33,15 +33,18 @@ struct Feature{
     Location location;
     vector<Location> offsets;
     bool extraOffset;
-    vector<float> sumDelta;
-    bool active;
+    float sumDelta;
+    bool active, previousActive;
     vector<Feature*> children;
-     Feature(int index, int color,int a, int b, int c, int d,int numActions){
+    Feature(int index, int color,int a, int b, int c, int d){
         this->featureIndex = index;
         this->location = Location(color,a,b,c,d);
         this->extraOffset = false;
-        sumDelta.resize(numActions,0.0);
+        this->sumDelta = 0.0;
+        this->active = false;
+        this->previousActive = false;
     }
+    
 };
 
 struct Disjoint_Set_Element{
@@ -61,7 +64,6 @@ class AdaptiveFeatures : public Features::Features{
         int numColors, colorMultiplier;
         int numActions; 
         int numPromotions;
-        long long promotionFrequency, numberOfFramesToPromotion;
         long long numFeatures;
         vector<vector<tuple<int,int> > > blobs;
         vector<Feature*> baseFeatures;
@@ -109,9 +111,12 @@ class AdaptiveFeatures : public Features::Features{
  		* @return nothing as one will receive the requested data by the last parameter, by reference.
  		*/
         virtual void getActiveFeaturesIndices(const ALEScreen &screen, const ALERAM &ram, vector<long long>& activeFeatures);
-        void updateDelta(float delta, int a);
-        bool promoteFeatures(long long frames);
-        void updateWeights(vector<vector<float> >& weights,float learningRate);
+        void updateDelta(float delta);
+        void promoteFeatures();
+        //void updateWeights(vector<vector<float> >& weights,float learningRate);
+        long long getNumFeatures();
+        void resetDelta();
+        void resetActive();
         //void demoteFeature(long long index);
 };
 #endif

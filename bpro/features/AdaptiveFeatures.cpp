@@ -19,9 +19,7 @@ AdaptiveFeatures::AdaptiveFeatures(ALEInterface& ale, Parameters *param){
      this->param = param;
      numColors   = param->getNumColors();
      colorMultiplier =(int) log2(256 / numColors);
-     int numPromotinos = param->getNumPromotions();
-     promotionFrequency = param->getPromotionFrequency();
-     numberOfFramesToPromotion = promotionFrequency;
+     numPromotions = param->getNumPromotions();
      numFeatures = 1;
     
     //Get the number of effective actions:
@@ -91,10 +89,12 @@ AdaptiveFeatures::~AdaptiveFeatures(){
 }
 
 void AdaptiveFeatures::constructBaseFeatures(){
-    rootFeature = new Feature(0,0,0,0,210,160,numActions);
+    rootFeature = new Feature(0,0,0,0,210,160);
+    rootFeature->active = true;
+    rootFeature->previousActive = true;
     //initial base features: will be whether there is a color k pixel on the screen
     for (int i=0;i<numColors;++i){
-        baseFeatures.push_back(new Feature(numFeatures++,i,0,0,210,160,numActions));
+        baseFeatures.push_back(new Feature(numFeatures++,i,0,0,210,160));
         rootFeature->children.push_back(baseFeatures[i]);
         generateCandidateFeatures(baseFeatures[i]);
     }
@@ -108,21 +108,23 @@ void AdaptiveFeatures::getActiveFeaturesIndices(const ALEScreen &screen, const A
     activeFeatures.push_back(0);
     
     for (int color=0;color<numColors;++color){
+        baseFeatures[color]->previousActive = baseFeatures[color]->active;
         if (blobs[color].size()>0){
             baseFeatures[color]->active = true;
             activeFeatures.push_back(baseFeatures[color]->featureIndex);
             for (auto child:baseFeatures[color]->children){
                 recursionToCheckFeatures(child,blobs[color],activeFeatures);
             }
+        }else{
+            baseFeatures[color]->active = false;
         }
     }
-    rootFeature->active = true;
-    
 }
 
 void AdaptiveFeatures::recursionToCheckFeatures(Feature*& current, vector<tuple<int,int> > possibleAnchorPositions, vector<long long>& activeFeatures){
     //check whether the feature is on
     vector<tuple<int,int> > anchors;
+    current->previousActive = current->active;
     current->active = false;
     if (current->extraOffset){
         Location* offset = &(current->offsets.back());
@@ -132,9 +134,14 @@ void AdaptiveFeatures::recursionToCheckFeatures(Feature*& current, vector<tuple<
             auto s = make_tuple(min(209,anchorX+offset->resolutionX * offset->x),min(159,anchorY+offset->resolutionY * offset->y));
             auto l = make_tuple(min(209,anchorX+offset->resolutionX*(1+offset->x)-1),min(159,anchorY+offset->resolutionY*(1+offset->y)-1));
             auto fi = lower_bound(possiblePositions->begin(),possiblePositions->end(),s);
-            if (fi!=possiblePositions->end() && (*fi)<=l){
-                current->active = true;
-                anchors.push_back(p);
+            if (fi!=possiblePositions->end()){
+                for (auto i =fi;*i<=l;++i){
+                    if (get<1>(*i)>=get<1>(s) && get<1>(*i)<=get<1>(l)){
+                        current->active = true;
+                        anchors.push_back(p);
+                        break;
+                    }
+                }
             }
         }
     }else{
@@ -144,11 +151,14 @@ void AdaptiveFeatures::recursionToCheckFeatures(Feature*& current, vector<tuple<
         auto s = make_tuple(min(209,location->x*location->resolutionX),min(159,location->y * location->resolutionY));
         auto l = make_tuple(min(209,(location->x+1)*location->resolutionX-1),min(159,(1+location->y)*location->resolutionY-1));
         auto lb = lower_bound(possibleAnchorPositions.begin(),possibleAnchorPositions.end(),s);
-        auto ub = upper_bound(possibleAnchorPositions.begin(),possibleAnchorPositions.end(),l);
-        if (lb!=possibleAnchorPositions.end() && (*lb)<=l){
-            current->active = true;
-            for (auto p = lb;p!=ub;++p){
-                anchors.push_back(*p);
+        if (lb!=possibleAnchorPositions.end()){
+            for (auto p = lb;*p<=l;++p){
+                if (get<1>(*p)>=get<1>(s) && get<1>(*p)<=get<1>(l)){
+                    anchors.push_back(*p);
+                }
+            }
+            if (anchors.size()>0){
+                current->active = true;
             }
         }
     }
@@ -164,61 +174,61 @@ void AdaptiveFeatures::recursionToCheckFeatures(Feature*& current, vector<tuple<
     }
 }
 
-void AdaptiveFeatures::updateDelta(float delta,int a){
-    queue<Feature*> q;
-    q.push(rootFeature);
-    
-    while (!q.empty()){
-        Feature* f = q.front();
-        q.pop();
-        if (f->active){
-            f->sumDelta[a]+=delta;
-        }
-        
-        //add its children to queue
-        for (auto child:f->children){
-            q.push(child);
-        }
-    }
-}
-
-bool AdaptiveFeatures::promoteFeatures(long long frames){
-    if (frames<numberOfFramesToPromotion){
-        return false;
-    }
-    cout<<"promote";
-    numberOfFramesToPromotion+=promotionFrequency;
-    
+void AdaptiveFeatures::promoteFeatures(){
     //features to promote
-    vector<Feature*> featuresToPromote;
+    vector<Feature*> bestCandidates(numPromotions,NULL);
+    vector<float> bestCandidateValues(numPromotions,0.0);
     
     queue<Feature*> q;
     q.push(rootFeature);
     while (!q.empty()){
         Feature* f = q.front();
         q.pop();
-        
+        cout<<f->featureIndex<<' '<<f->sumDelta<<endl;
         //add its children to queue
         for (auto child:f->children){
-            q.push(child);
             if (child->featureIndex==0){
-                for (int a=0;a<numActions;++a){
-                    if (child->sumDelta[a]*f->sumDelta[a] <0 || fabs(child->sumDelta[a])>fabs(f->sumDelta[a])){
-                        featuresToPromote.push_back(child);
-                        break;
-                    }
+                cout<<child->sumDelta<<' '<<f->sumDelta*child->sumDelta<<endl;
+                //determine whether the candidate is worth promotion
+                float v = -1;
+                if (child->sumDelta * f->sumDelta <0){
+                    v = fabs(child->sumDelta);
                 }
+                else if (fabs(child->sumDelta)>fabs(f->sumDelta)){
+                    v = fabs(child->sumDelta) - fabs(f->sumDelta);
+                }
+                
+                //rank the candidates' position in our promotion list
+                if (v>=0){
+                    int index = numPromotions;
+                    while (index>0 && v>bestCandidateValues[index-1]){
+                        --index;
+                    }
+                    for (int i=numPromotions-1;i>index;--i){
+                        bestCandidates[i] = bestCandidates[i-1];
+                        bestCandidateValues[i] = bestCandidateValues[i-1];
+                    }
+                    if (index<numPromotions){
+                        bestCandidates[index] = f;
+                        bestCandidateValues[index] = v;
+                    }
+                    
+                }
+            }else{
+                q.push(child);
             }
         }
     }
-    
+
     //promote the best candidates
-    cout<<featuresToPromote.size()<<endl;
-    for (auto f:featuresToPromote){
-        f->featureIndex = numFeatures++;
-        generateCandidateFeatures(f);
+    for (int i=0;i<numPromotions;++i){
+        if (bestCandidates[i]){
+            bestCandidates[i]->featureIndex = numFeatures;
+            ++numFeatures;
+            generateCandidateFeatures(bestCandidates[i]);
+            ++s;
+        }
     }
-    return true;
 }
 
 void AdaptiveFeatures::generateCandidateFeatures(Feature*& baseFeature){
@@ -232,7 +242,7 @@ void AdaptiveFeatures::generateCandidateFeatures(Feature*& baseFeature){
     
         for (int x = l->x * 3; x< l->x*3+3; ++x){
             for (int y = l->y*3; y< l->y*3+3; ++y){
-                baseFeature->children.push_back(new Feature(0,l->color,x,y,refinedResolutionX,refinedResolutionY,numActions));
+                baseFeature->children.push_back(new Feature(0,l->color,x,y,refinedResolutionX,refinedResolutionY));
                 baseFeature->children.back()->offsets = baseFeature->offsets;
             }
         }
@@ -249,7 +259,7 @@ void AdaptiveFeatures::generateCandidateFeatures(Feature*& baseFeature){
             int negativeX = (-1)* (offset.x<0); int negativeY = (-1)*(offset.y<0);
             for (int x = offset.x * 3; x< offset.x*3+3;++x){
                 for (int y = offset.y*3; y< offset.y*3+3;++y){
-                    baseFeature->children.push_back(new Feature(0,l->color,l->x,l->y,l->resolutionX,l->resolutionY,numActions));
+                    baseFeature->children.push_back(new Feature(0,l->color,l->x,l->y,l->resolutionX,l->resolutionY));
                     Feature* newF = baseFeature->children.back();
                     newF->offsets = baseFeature->offsets;
                     newF->offsets.push_back(Location(offset.color,x*negativeX,y*negativeY,refinedResolutionX,refinedResolutionY));
@@ -272,7 +282,7 @@ void AdaptiveFeatures::generateCandidateFeatures(Feature*& baseFeature){
                     }
                 }
                 if (!alreadyAdded){
-                    baseFeature->children.push_back(new Feature(0,l->color,l->x,l->y,l->resolutionX,l->resolutionY,numActions));
+                    baseFeature->children.push_back(new Feature(0,l->color,l->x,l->y,l->resolutionX,l->resolutionY));
                     Feature* newF = baseFeature->children.back();
                     newF-> offsets = baseFeature->offsets;
                     newF->offsets.push_back(Location(color,x,y,rx,ry));
@@ -283,10 +293,24 @@ void AdaptiveFeatures::generateCandidateFeatures(Feature*& baseFeature){
     }
 }
 
-void AdaptiveFeatures::updateWeights(vector<vector<float> >& w,float learningRate){
-    for (int a=0;a<numActions;++a){
-        w[a].resize(numFeatures,0.0);
+void AdaptiveFeatures::updateDelta(float delta){
+    queue<Feature*> q;
+    q.push(rootFeature);
+    
+    while (!q.empty()){
+        Feature* f = q.front();
+        q.pop();
+        if (f->previousActive){
+            f->sumDelta+=delta;
+            for (auto child:f->children){
+                q.push(child);
+            }
+        }
     }
+}
+
+/*void AdaptiveFeatures::updateWeights(vector<vector<float> >& w,float learningRate){
+    
     
     queue<Feature*> q;
     q.push(rootFeature);
@@ -299,16 +323,34 @@ void AdaptiveFeatures::updateWeights(vector<vector<float> >& w,float learningRat
         for (int a=0;a<numActions;++a){
             w[a][index]+=learningRate*f->sumDelta[a];
         }
-        fill(f->sumDelta.begin(),f->sumDelta.end(),0.0);
         
         for (auto child:f->children){
             if (child->featureIndex!=0) {
                 q.push(child);
-            }else{
-                fill(child->sumDelta.begin(),child->sumDelta.end(),0.0);
             }
         }
     }
+}*/
+
+void AdaptiveFeatures::resetDelta(){
+    queue<Feature*> q;
+    q.push(rootFeature);
+    
+    while (!q.empty()){
+        Feature* f = q.front();
+        q.pop();
+        
+        f->sumDelta = 0.0;
+        
+        for (auto child:f->children){
+            q.push(child);
+        }
+    }
+
+}
+
+long long AdaptiveFeatures::getNumFeatures(){
+    return numFeatures;
 }
 
 /*void Adaptive::demote(long long index){
@@ -442,3 +484,20 @@ void AdaptiveFeatures::updateRepresentatiePixel(int& x, int& y, Disjoint_Set_Ele
     root->size += other->size;
 }
 
+void AdaptiveFeatures::resetActive(){
+    queue<Feature*> q;
+    q.push(rootFeature);
+    
+    while (!q.empty()){
+        Feature* f = q.front();
+        q.pop();
+        
+        f->active = false;
+        f->previousActive = false;
+        
+        for (auto child:f->children){
+            q.push(child);
+        }
+    }
+
+}
