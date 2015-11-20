@@ -18,7 +18,7 @@ using namespace std;
 AdaptiveFeatures::AdaptiveFeatures(ALEInterface& ale, Parameters *param){
      this->param = param;
      numColors   = param->getNumColors();
-     colorMultiplier =(int) log2(256 / numColors);
+     assert(numColors==128 || numColors==8);
      numPromotions = param->getNumPromotions();
      numFeatures = 1;
     
@@ -90,8 +90,6 @@ AdaptiveFeatures::~AdaptiveFeatures(){
 
 void AdaptiveFeatures::constructBaseFeatures(){
     rootFeature = new Feature(0,0,0,0,210,160);
-    rootFeature->active = true;
-    rootFeature->previousActive = true;
     //initial base features: will be whether there is a color k pixel on the screen
     for (int i=0;i<numColors;++i){
         baseFeatures.push_back(new Feature(numFeatures++,i,0,0,210,160));
@@ -105,19 +103,11 @@ void AdaptiveFeatures::getActiveFeaturesIndices(const ALEScreen &screen, const A
     getBlobs(screen);
 
     //bias feature
+    rootFeature->previousActive = true;
     activeFeatures.push_back(0);
     
     for (int color=0;color<numColors;++color){
-        baseFeatures[color]->previousActive = baseFeatures[color]->active;
-        if (blobs[color].size()>0){
-            baseFeatures[color]->active = true;
-            activeFeatures.push_back(baseFeatures[color]->featureIndex);
-            for (auto child:baseFeatures[color]->children){
-                recursionToCheckFeatures(child,blobs[color],activeFeatures);
-            }
-        }else{
-            baseFeatures[color]->active = false;
-        }
+        recursionToCheckFeatures(baseFeatures[color],blobs[color],activeFeatures);
     }
 }
 
@@ -131,43 +121,37 @@ void AdaptiveFeatures::recursionToCheckFeatures(Feature*& current, vector<tuple<
         vector<tuple<int,int> >* possiblePositions = &blobs[offset->color];
         for (auto p:possibleAnchorPositions){
             int anchorX = get<0>(p); int anchorY = get<1>(p);
-            auto s = make_tuple(min(209,anchorX+offset->resolutionX * offset->x),min(159,anchorY+offset->resolutionY * offset->y));
-            auto l = make_tuple(min(209,anchorX+offset->resolutionX*(1+offset->x)-1),min(159,anchorY+offset->resolutionY*(1+offset->y)-1));
+            auto s = make_tuple(min(209,anchorX+offset->resolutionX * offset->x-209),min(159,anchorY+offset->resolutionY * offset->y-159));
+            auto l = make_tuple(min(209,anchorX+offset->resolutionX*(1+offset->x)-210),min(159,anchorY+offset->resolutionY*(1+offset->y)-160));
             auto fi = lower_bound(possiblePositions->begin(),possiblePositions->end(),s);
-            if (fi!=possiblePositions->end()){
-                for (auto i =fi;*i<=l;++i){
-                    if (get<1>(*i)>=get<1>(s) && get<1>(*i)<=get<1>(l)){
-                        current->active = true;
-                        anchors.push_back(p);
-                        break;
-                    }
+            for (auto i =fi;i!=possiblePositions->end() && *i<=l;++i){
+                if (get<1>(*i)>=get<1>(s) && get<1>(*i)<=get<1>(l)){
+                    current->active = true;
+                    anchors.push_back(p);
+                    break;
                 }
             }
         }
     }else{
         //determine the range of current feature's location
         Location* location = &current->location;
-        
         auto s = make_tuple(min(209,location->x*location->resolutionX),min(159,location->y * location->resolutionY));
         auto l = make_tuple(min(209,(location->x+1)*location->resolutionX-1),min(159,(1+location->y)*location->resolutionY-1));
         auto lb = lower_bound(possibleAnchorPositions.begin(),possibleAnchorPositions.end(),s);
-        if (lb!=possibleAnchorPositions.end()){
-            for (auto p = lb;*p<=l;++p){
-                if (get<1>(*p)>=get<1>(s) && get<1>(*p)<=get<1>(l)){
-                    anchors.push_back(*p);
-                }
+        for (auto p = lb;p!=possibleAnchorPositions.end() && *p<=l;++p){
+            if (get<1>(*p)>=get<1>(s) && get<1>(*p)<=get<1>(l)){
+                anchors.push_back(*p);
             }
-            if (anchors.size()>0){
-                current->active = true;
-            }
+        }
+        if (anchors.size()>0){
+            current->active = true;
         }
     }
     
-    //check its children
+    if (current->previousActive && current->featureIndex){
+        activeFeatures.push_back(current->featureIndex);
+    }
     if (current->active){
-        if (current->featureIndex){
-            activeFeatures.push_back(current->featureIndex);
-        }
         for  (int i=0;i<current->children.size();++i){
             recursionToCheckFeatures(current->children[i],anchors,activeFeatures);
         }
@@ -184,11 +168,11 @@ void AdaptiveFeatures::promoteFeatures(){
     while (!q.empty()){
         Feature* f = q.front();
         q.pop();
-        cout<<f->featureIndex<<' '<<f->sumDelta<<endl;
+        //cout<<f->featureIndex<<' '<<f->sumDelta<<endl;
         //add its children to queue
         for (auto child:f->children){
             if (child->featureIndex==0){
-                cout<<child->sumDelta<<' '<<f->sumDelta*child->sumDelta<<endl;
+                //cout<<child->sumDelta<<endl;
                 //determine whether the candidate is worth promotion
                 float v = -1;
                 if (child->sumDelta * f->sumDelta <0){
@@ -209,7 +193,7 @@ void AdaptiveFeatures::promoteFeatures(){
                         bestCandidateValues[i] = bestCandidateValues[i-1];
                     }
                     if (index<numPromotions){
-                        bestCandidates[index] = f;
+                        bestCandidates[index] = child;
                         bestCandidateValues[index] = v;
                     }
                     
@@ -221,13 +205,16 @@ void AdaptiveFeatures::promoteFeatures(){
     }
 
     //promote the best candidates
+    int numPromotionsMade = 0;
     for (int i=0;i<numPromotions;++i){
         if (bestCandidates[i]){
             bestCandidates[i]->featureIndex = numFeatures;
             ++numFeatures;
+            ++numPromotionsMade;
             generateCandidateFeatures(bestCandidates[i]);
         }
     }
+    cout<<"Promotion: "<<numPromotionsMade<<endl;
 }
 
 void AdaptiveFeatures::generateCandidateFeatures(Feature*& baseFeature){
@@ -249,19 +236,18 @@ void AdaptiveFeatures::generateCandidateFeatures(Feature*& baseFeature){
     
     //refine its offset resolution
     for (auto offset:baseFeature->offsets){
-        if (offset.resolutionX>l->resolutionX){
+        if (offset.resolutionX>3 && offset.resolutionY>3){
             int refinedResolutionX =  offset.resolutionX/3;
             refinedResolutionX += (offset.resolutionX%3==0)? 0:1;
             int refinedResolutionY =  offset.resolutionY/3;
             refinedResolutionY += (offset.resolutionY%3==0)? 0:1;
 
-            int negativeX = (-1)* (offset.x<0); int negativeY = (-1)*(offset.y<0);
             for (int x = offset.x * 3; x< offset.x*3+3;++x){
                 for (int y = offset.y*3; y< offset.y*3+3;++y){
-                    baseFeature->children.push_back(new Feature(0,l->color,l->x,l->y,l->resolutionX,l->resolutionY));
-                    Feature* newF = baseFeature->children.back();
+                    Feature* newF = new Feature(0,l->color,l->x,l->y,l->resolutionX,l->resolutionY);
+                    baseFeature->children.push_back(newF);
                     newF->offsets = baseFeature->offsets;
-                    newF->offsets.push_back(Location(offset.color,x*negativeX,y*negativeY,refinedResolutionX,refinedResolutionY));
+                    newF->offsets.push_back(Location(offset.color,x,y,refinedResolutionX,refinedResolutionY));
                     newF->extraOffset = true;
                 }
             }
@@ -269,10 +255,10 @@ void AdaptiveFeatures::generateCandidateFeatures(Feature*& baseFeature){
     }
     
     //add offsets
-    int rx = 210; int ry = 180;
+    int rx = 140; int ry = 120;
     for (int color = 0; color<numColors;++color){
-        for (int x=0;x<1;++x){
-            for (int y=0;y<1;++y){
+        for (int x=0;x<3;++x){
+            for (int y=0;y<3;++y){
                 bool alreadyAdded = false;
                 for (auto offset:baseFeature->offsets){
                     if (offset.color==color && offset.resolutionX==rx && offset.resolutionY==ry && offset.x ==x && offset.y ==y){
@@ -340,6 +326,7 @@ void AdaptiveFeatures::resetDelta(){
         q.pop();
         
         f->sumDelta = 0.0;
+        f->previousActive = false;
         
         for (auto child:f->children){
             q.push(child);
@@ -389,8 +376,11 @@ void AdaptiveFeatures::getBlobs(const ALEScreen &screen){
     for (int x=0;x<screenHeight;x++){
         for (int y=0;y<screenWidth;y++){
             int color = screen.get(x,y);
-            color = color >>colorMultiplier;
-            if (y>0 && color == screen.get(x,y-1)>>colorMultiplier){
+            color = color>>1;
+            if (numColors == 8){
+                color = color%8;
+            }
+            if (y>0 && color == (screen.get(x,y-1)>>1)%numColors){
                 neighbors = extraNeighbors;
             }else{
                 neighbors = fullNeighbors;

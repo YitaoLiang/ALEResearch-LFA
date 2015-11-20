@@ -61,7 +61,7 @@ class AdaptiveFeatures : public Features::Features{
 	private:
 		Parameters *param;
         Background *background;
-        int numColors, colorMultiplier;
+        int numColors;
         int numActions; 
         int numPromotions;
         long long numFeatures;
