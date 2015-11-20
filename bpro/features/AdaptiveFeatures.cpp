@@ -209,6 +209,12 @@ void AdaptiveFeatures::promoteFeatures(){
     for (int i=0;i<numPromotions;++i){
         if (bestCandidates[i]){
             bestCandidates[i]->featureIndex = numFeatures;
+            if (bestCandidates[i]->location.resolutionX<=15){
+                cout<<"absolute Position Refined to the target resolution"<<endl;
+            }
+            if (bestCandidates[i]->offsets.size()>0 && bestCandidates[i]->offsets.back().resolutionX<=15){
+                cout<<"offset resolution refined to the target resolution"<<endl;
+            }
             ++numFeatures;
             ++numPromotionsMade;
             generateCandidateFeatures(bestCandidates[i]);
@@ -244,11 +250,20 @@ void AdaptiveFeatures::generateCandidateFeatures(Feature*& baseFeature){
 
             for (int x = offset.x * 3; x< offset.x*3+3;++x){
                 for (int y = offset.y*3; y< offset.y*3+3;++y){
-                    Feature* newF = new Feature(0,l->color,l->x,l->y,l->resolutionX,l->resolutionY);
-                    baseFeature->children.push_back(newF);
-                    newF->offsets = baseFeature->offsets;
-                    newF->offsets.push_back(Location(offset.color,x,y,refinedResolutionX,refinedResolutionY));
-                    newF->extraOffset = true;
+                    bool alreadyAdded = false;
+                    for (auto p:baseFeature->offsets){
+                        if (p.color==offset.color && p.resolutionX==refinedResolutionX && p.resolutionY==refinedResolutionY && p.x ==x && p.y ==y){
+                            alreadyAdded = true;
+                            break;
+                        }
+                    }
+                    if (!alreadyAdded){
+                        Feature* newF = new Feature(0,l->color,l->x,l->y,l->resolutionX,l->resolutionY);
+                        baseFeature->children.push_back(newF);
+                        newF->offsets = baseFeature->offsets;
+                        newF->offsets.push_back(Location(offset.color,x,y,refinedResolutionX,refinedResolutionY));
+                        newF->extraOffset = true;
+                    }
                 }
             }
         }
@@ -372,15 +387,13 @@ void AdaptiveFeatures::getBlobs(const ALEScreen &screen){
     vector<int> route;
     
     vector<vector<vector<unsigned short> > >* neighbors;
+    int largestColor = numColors -1;
     
     for (int x=0;x<screenHeight;x++){
         for (int y=0;y<screenWidth;y++){
             int color = screen.get(x,y);
-            color = color>>1;
-            if (numColors == 8){
-                color = color%8;
-            }
-            if (y>0 && color == (screen.get(x,y-1)>>1)%numColors){
+            color = (color>>1)&largestColor;
+            if (y>0 && color == ((screen.get(x,y-1)>>1)&largestColor)){
                 neighbors = extraNeighbors;
             }else{
                 neighbors = fullNeighbors;
