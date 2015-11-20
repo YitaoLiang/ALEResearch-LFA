@@ -209,6 +209,10 @@ void AdaptiveFeatures::promoteFeatures(){
     for (int i=0;i<numPromotions;++i){
         if (bestCandidates[i]){
             bestCandidates[i]->featureIndex = numFeatures;
+            bestAbsolutePositionResolution = min(bestCandidates[i]->location.resolutionX, bestAbsolutePositionResolution);
+            if (bestCandidates[i]->offsets.size()>0){
+                bestOffsetResolution = min(bestOffsetResolution,bestCandidates[i]->offsets.back().resolutionX);
+            }
             if (bestCandidates[i]->location.resolutionX<=15){
                 cout<<"absolute Position Refined to the target resolution"<<endl;
             }
@@ -220,6 +224,7 @@ void AdaptiveFeatures::promoteFeatures(){
             generateCandidateFeatures(bestCandidates[i]);
         }
     }
+    cout<<"Best Absolute Position Resolution: "<<bestAbsolutePositionResolution<<" Best Offset Resolution: "<<bestOffsetResolution<<endl;
     cout<<"Promotion: "<<numPromotionsMade<<endl;
 }
 

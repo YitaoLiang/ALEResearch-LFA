@@ -69,6 +69,8 @@ class AdaptiveFeatures : public Features::Features{
         vector<Feature*> baseFeatures;
         unordered_map<long long, Feature*> indexToFeature;
         Feature* rootFeature;
+        int bestAbsolutePositionResolution = 300;
+        int bestOffsetResolution = 300;
     
         void constructBaseFeatures();
         void getBlobs(const ALEScreen& screen);
