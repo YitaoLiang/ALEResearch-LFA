@@ -28,7 +28,7 @@ BlobTimeFeatures::BlobTimeFeatures(Parameters *param){
     //numColumns  = param->getNumColumns();
     //numRows     = param->getNumRows();
     numColors   = param->getNumColors();
-    colorMultiplier =(int) log2(256 / numColors);
+    assert(numColors==128 || numColors==8);
     
     if(this->param->getSubtractBackground()){
         this->background = new Background(param);
@@ -140,12 +140,13 @@ void BlobTimeFeatures::getBlobs(const ALEScreen &screen){
     vector<int> route;
     
     vector<vector<vector<unsigned short> > >* neighbors;
+    int largestColor = numColors -1;
     
     for (int x=0;x<screenHeight;x++){
         for (int y=0;y<screenWidth;y++){
             int color = screen.get(x,y);
-            color = color >>colorMultiplier;
-            if (y>0 && color == screen.get(x,y-1)>>colorMultiplier){
+            color = (color>>1)&largestColor;
+            if (y>0 && color == ((screen.get(x,y-1)>>1)&largestColor)){
                 neighbors = extraNeighbors;
             }else{
                 neighbors = fullNeighbors;

@@ -39,7 +39,6 @@ class BlobTimeFeatures : public Features::Features{
 		
 		long long numBasicFeatures, numRelativeFeatures, numTimeDimensionalOffsets, numThreePointOffsets;
         int numColors;
-        int colorMultiplier;
     
         int numResolutions;
         vector<vector<vector<unsigned short> > >* fullNeighbors;
