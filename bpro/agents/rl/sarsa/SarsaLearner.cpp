@@ -244,7 +244,7 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
         features->resetActive();
         
         //promote features
-        if (totalNumberFrames>=numberOfFramesToPromotion && totalNumberFrames<40000000){
+        if (totalNumberFrames>=numberOfFramesToPromotion && totalNumberFrames<20000000){
             //features->updateWeights(w,learningRate);
             features->promoteFeatures();
             features->resetDelta();
@@ -256,7 +256,7 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
             numberOfFramesToPromotion+=promotionFrequency;
         }
         
-        if (totalNumberFrames>=40000000 && !resetLearning){
+        if (totalNumberFrames>=20000000 && !resetLearning){
             features->promoteFeatures();
             features->resetDelta();
             numFeatures = features->getNumFeatures();
