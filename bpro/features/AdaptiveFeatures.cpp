@@ -215,9 +215,11 @@ void AdaptiveFeatures::promoteFeatures(){
             }
             if (bestCandidates[i]->location.resolutionX<=15){
                 cout<<"absolute Position Refined to the target resolution"<<endl;
+                cout<<bestCandidates[i]->location.color<<endl;
             }
             if (bestCandidates[i]->offsets.size()>0 && bestCandidates[i]->offsets.back().resolutionX<=15){
                 cout<<"offset resolution refined to the target resolution"<<endl;
+                cout<<bestCandidates[i]->location.color<<endl;
             }
             ++numFeatures;
             ++numPromotionsMade;

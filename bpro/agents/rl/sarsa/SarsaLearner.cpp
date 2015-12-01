@@ -144,6 +144,7 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
         w[a].resize(numFeatures,0.0);
         e[a].resize(numFeatures,0.0);
     }
+    bool resetLearning = false;
     
     //Repeat (for each episode):
     //This is going to be interrupted by the ALE code since I set max_num_frames beforehand
@@ -243,7 +244,7 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
         features->resetActive();
         
         //promote features
-        if (totalNumberFrames>=numberOfFramesToPromotion){
+        if (totalNumberFrames>=numberOfFramesToPromotion && totalNumberFrames<50000){
             //features->updateWeights(w,learningRate);
             features->promoteFeatures();
             features->resetDelta();
@@ -255,6 +256,20 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
             numberOfFramesToPromotion+=promotionFrequency;
         }
         
+        if (totalNumberFrames>=50000 && !resetLearning){
+            features->promoteFeatures();
+            features->resetDelta();
+            numFeatures = features->getNumFeatures();
+            for (int a=0;a<numActions;++a){
+                w[a].resize(numFeatures,0.0);
+                e[a].resize(numFeatures,0.0);
+                fill(w[a].begin(),w[a].end(),0);
+                fill(e[a].begin(),e[a].end(),0);
+                nonZeroElig[a].clear();
+            }
+            resetLearning = true;
+            cout<<"reset learning\n"<<endl;
+        }
         //save checkPoint
         if(toSaveCheckPoint && totalNumberFrames>saveThreshold){
             saveCheckPoint(episode,totalNumberFrames,episodeResults,saveWeightsEveryXFrames,episodeFrames,episodeFps);
