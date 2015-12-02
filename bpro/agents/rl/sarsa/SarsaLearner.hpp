@@ -33,6 +33,7 @@ private:
     int noOpMax;
     int numStepsPerAction;
     long long promotionFrequency,numberOfFramesToPromotion;
+    Parameters* param;
     
     
     vector<long long> F;					//Set of features active

@@ -47,12 +47,15 @@ struct Feature{
     
 };
 
+#ifndef DISJOINT_SET_ELEMENT
+#define DISJOINT_SET_ELEMENT
 struct Disjoint_Set_Element{
     int rowUp, rowDown, columnLeft, columnRight;
     int size;
     int parent;
     int color;
 };
+#endif
 
 
 using namespace std;

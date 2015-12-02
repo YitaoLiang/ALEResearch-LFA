@@ -24,8 +24,8 @@ endif
 
 all: learnerAdaptive
 
-learnerAdaptive: bin/mainAdaptive.o bin/Mathematics.o bin/Parameters.o bin/Timer.o bin/Features.o bin/Background.o bin/AdaptiveFeatures.o bin/RLLearner.o bin/SarsaLearner.o
-	$(CXX) $(FLAGS) bin/mainAdaptive.o bin/Mathematics.o bin/Timer.o bin/Parameters.o bin/Features.o bin/Background.o bin/AdaptiveFeatures.o bin/RLLearner.o bin/SarsaLearner.o -o learnerAdaptive
+learnerAdaptive: bin/mainAdaptive.o bin/Mathematics.o bin/Parameters.o bin/Timer.o bin/Features.o bin/Background.o bin/AdaptiveFeatures.o bin/RLLearner.o bin/SarsaLearner.o bin/BlobTimeFeaturs.o bin/BlobTimeFeatures.o
+	$(CXX) $(FLAGS) bin/mainAdaptive.o bin/Mathematics.o bin/Timer.o bin/Parameters.o bin/Features.o bin/Background.o bin/AdaptiveFeatures.o bin/RLLearner.o bin/SarsaLearner.o bin/BlobTimeFeatures.o -o learnerAdaptive
 
 bin/mainAdaptive.o: mainAdaptive.cpp
 	$(CXX) $(FLAGS) -c mainAdaptive.cpp -o bin/mainAdaptive.o
@@ -46,8 +46,11 @@ bin/Background.o: features/Background.cpp
 	$(CXX) $(FLAGS) -c features/Background.cpp -o bin/Background.o
 	
 bin/AdaptiveFeatures.o: features/AdaptiveFeatures.cpp
-	$(CXX) $(FLAGS) -c features/AdaptiveFeatures.cpp -o bin/AdaptiveFeatures.o	
-	
+	$(CXX) $(FLAGS) -c features/AdaptiveFeatures.cpp -o bin/AdaptiveFeatures.o
+
+bin/BlobTimeFeaturs.o: features/BlobTimeFeatures.cpp
+	$(CXX) $(FLAGS) -c features/BlobTimeFeatures.cpp -o bin/BlobTimeFeatures.o	
+
 bin/RLLearner.o: agents/rl/RLLearner.cpp
 	$(CXX) $(FLAGS) -c agents/rl/RLLearner.cpp -o bin/RLLearner.o
 
