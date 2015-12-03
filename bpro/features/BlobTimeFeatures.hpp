@@ -111,11 +111,11 @@ class BlobTimeFeatures : public Features::Features{
  		*/
 		long long getNumberOfFeatures();
         
-        void promoteFeatures();
-        void updateDelta(float delta);
+        void promoteFeatures(){};
+        void updateDelta(float delta){};
         //virtual void updateWeights(vector<vector<float> >& weights, float learningRate) =0;
-        void resetDelta();
-        void resetActive();
+        void resetPromotionCriteria(){};
+        void resetActive(){};
+        long long getNumFeatures(){return 0;};
         void clearCash();
-    long long getNumFeatures();
 };

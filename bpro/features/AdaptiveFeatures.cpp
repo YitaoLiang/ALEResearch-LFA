@@ -3,25 +3,26 @@
  **
  ** Author: Yitao Liang
  ***************************************************************************************/
-#include <set>
 #include <assert.h>
 #include <algorithm>
 #include <math.h>
-#include <unordered_set>
-#include <unordered_map>
 #include <queue>
 
 #include "AdaptiveFeatures.hpp"
-
 using namespace std;
 
+bool operator< (tuple<float,Feature*> a, tuple<float,Feature*> b){
+        return get<0>(a) < get<0>(b);
+}
+
 AdaptiveFeatures::AdaptiveFeatures(ALEInterface& ale, Parameters *param){
-     this->param = param;
-     numColors   = param->getNumColors();
-     assert(numColors==128 || numColors==8);
-     numPromotions = param->getNumPromotions();
-     numFeatures = 1;
-    
+    this->param = param;
+    numColors   = param->getNumColors();
+    assert(numColors==128 || numColors==8);
+    numPromotions = param->getNumPromotions();
+    numFeatures = 1;
+    numGroups = 0;
+
     //Get the number of effective actions:
     if(param->isMinimalAction()){
        numActions = ale.getMinimalActionSet().size();
@@ -31,7 +32,7 @@ AdaptiveFeatures::AdaptiveFeatures(ALEInterface& ale, Parameters *param){
     }
      
      constructBaseFeatures();
-    
+
     neighborSize = param->getNeighborSize();
     vector<tuple<int,int> > fullNeighborOffsets;
     for (int xDelta=-neighborSize;xDelta<0;++xDelta){
@@ -89,6 +90,9 @@ AdaptiveFeatures::~AdaptiveFeatures(){
 }
 
 void AdaptiveFeatures::constructBaseFeatures(){
+    candidateStartIndex = 1+numColors+2*numPromotions;
+    candidateIndex = candidateStartIndex;
+    
     rootFeature = new Feature(0,0,0,0,210,160);
     //initial base features: will be whether there is a color k pixel on the screen
     for (int i=0;i<numColors;++i){
@@ -148,55 +152,45 @@ void AdaptiveFeatures::recursionToCheckFeatures(Feature*& current, vector<tuple<
         }
     }
     
-    if (current->previousActive && current->featureIndex){
-        activeFeatures.push_back(current->featureIndex);
-    }
     if (current->active){
-        for  (int i=0;i<current->children.size();++i){
-            recursionToCheckFeatures(current->children[i],anchors,activeFeatures);
+        if (current->featureIndex<candidateStartIndex){
+            activeFeatures.push_back(current->featureIndex);
+            for (int i=0;i<current->children.size();++i){
+                recursionToCheckFeatures(current->children[i],anchors,activeFeatures);
+            }
         }
     }
 }
 
 void AdaptiveFeatures::promoteFeatures(){
     //features to promote
-    vector<Feature*> bestCandidates(numPromotions,NULL);
-    vector<float> bestCandidateValues(numPromotions,0.0);
+    vector<tuple<float,Feature*> > bestCandidates;
+    unordered_set<long long> g;
+    g.insert(0);
     
     queue<Feature*> q;
     q.push(rootFeature);
     while (!q.empty()){
         Feature* f = q.front();
         q.pop();
-        //cout<<f->featureIndex<<' '<<f->sumDelta<<endl;
         //add its children to queue
         for (auto child:f->children){
-            if (child->featureIndex==0){
-                //cout<<child->sumDelta<<endl;
-                //determine whether the candidate is worth promotion
-                float v = -1;
-                if (child->sumDelta * f->sumDelta <0){
-                    v = fabs(child->sumDelta);
-                }
-                else if (fabs(child->sumDelta)>fabs(f->sumDelta)){
-                    v = fabs(child->sumDelta) - fabs(f->sumDelta);
-                }
-                
-                //rank the candidates' position in our promotion list
-                if (v>=0){
-                    int index = numPromotions;
-                    while (index>0 && v>bestCandidateValues[index-1]){
-                        --index;
+            if (child->featureIndex>=candidateStartIndex){
+                long long groupIndex = candidateIndexToGroupIndex[child->featureIndex];
+                if (g.count(groupIndex)==0){
+                    g.insert(groupIndex);
+                    //determine whether the candidate is worth promotion
+                    float v = -1;
+                    if (child->sumDelta * f->sumDelta <0){
+                        v = fabs(child->sumDelta);
                     }
-                    for (int i=numPromotions-1;i>index;--i){
-                        bestCandidates[i] = bestCandidates[i-1];
-                        bestCandidateValues[i] = bestCandidateValues[i-1];
-                    }
-                    if (index<numPromotions){
-                        bestCandidates[index] = child;
-                        bestCandidateValues[index] = v;
+                    else if (fabs(child->sumDelta)>fabs(f->sumDelta)){
+                        v = fabs(child->sumDelta) - fabs(f->sumDelta);
                     }
                     
+                    if (v>0){
+                        bestCandidates.push_back(make_tuple(v,child));
+                    }
                 }
             }else{
                 q.push(child);
@@ -204,30 +198,17 @@ void AdaptiveFeatures::promoteFeatures(){
         }
     }
 
-    //promote the best candidates
-    int numPromotionsMade = 0;
-    for (int i=0;i<numPromotions;++i){
-        if (bestCandidates[i]){
-            bestCandidates[i]->featureIndex = numFeatures;
-            bestAbsolutePositionResolution = min(bestCandidates[i]->location.resolutionX, bestAbsolutePositionResolution);
-            if (bestCandidates[i]->offsets.size()>0){
-                bestOffsetResolution = min(bestOffsetResolution,bestCandidates[i]->offsets.back().resolutionX);
-            }
-            if (bestCandidates[i]->location.resolutionX<=15){
-                cout<<"absolute Position Refined to the target resolution"<<endl;
-                cout<<bestCandidates[i]->location.color<<endl;
-            }
-            if (bestCandidates[i]->offsets.size()>0 && bestCandidates[i]->offsets.back().resolutionX<=15){
-                cout<<"offset resolution refined to the target resolution"<<endl;
-                cout<<bestCandidates[i]->location.color<<endl;
-            }
-            ++numFeatures;
-            ++numPromotionsMade;
-            generateCandidateFeatures(bestCandidates[i]);
-        }
+    //rank the candidates
+    sort(bestCandidates.begin(),bestCandidates.end());
+    
+    cout<<"Promotions: "<<min((unsigned long)numPromotions,bestCandidates.size())<<"\tGroups: "<<candidateGroups.size()<<"\tCandidates :"<<candidateIndex-candidateStartIndex+1<<endl;
+    for (unsigned long i=0;i<min((unsigned long)numPromotions,bestCandidates.size());++i){
+        Feature* candidateFeature = get<1>(bestCandidates[i]);
+        candidateFeature->featureIndex = numFeatures++;
+        generateCandidateFeatures(candidateFeature);
     }
-    cout<<"Best Absolute Position Resolution: "<<bestAbsolutePositionResolution<<" Best Offset Resolution: "<<bestOffsetResolution<<endl;
-    cout<<"Promotion: "<<numPromotionsMade<<endl;
+    
+    relabelCandidatesIndex();
 }
 
 void AdaptiveFeatures::generateCandidateFeatures(Feature*& baseFeature){
@@ -241,7 +222,7 @@ void AdaptiveFeatures::generateCandidateFeatures(Feature*& baseFeature){
     
         for (int x = l->x * 3; x< l->x*3+3; ++x){
             for (int y = l->y*3; y< l->y*3+3; ++y){
-                baseFeature->children.push_back(new Feature(0,l->color,x,y,refinedResolutionX,refinedResolutionY));
+                baseFeature->children.push_back(new Feature(candidateIndex++,l->color,x,y,refinedResolutionX,refinedResolutionY));
                 baseFeature->children.back()->offsets = baseFeature->offsets;
             }
         }
@@ -265,7 +246,7 @@ void AdaptiveFeatures::generateCandidateFeatures(Feature*& baseFeature){
                         }
                     }
                     if (!alreadyAdded){
-                        Feature* newF = new Feature(0,l->color,l->x,l->y,l->resolutionX,l->resolutionY);
+                        Feature* newF = new Feature(candidateIndex++,l->color,l->x,l->y,l->resolutionX,l->resolutionY);
                         baseFeature->children.push_back(newF);
                         newF->offsets = baseFeature->offsets;
                         newF->offsets.push_back(Location(offset.color,x,y,refinedResolutionX,refinedResolutionY));
@@ -289,7 +270,7 @@ void AdaptiveFeatures::generateCandidateFeatures(Feature*& baseFeature){
                     }
                 }
                 if (!alreadyAdded){
-                    baseFeature->children.push_back(new Feature(0,l->color,l->x,l->y,l->resolutionX,l->resolutionY));
+                    baseFeature->children.push_back(new Feature(candidateIndex++,l->color,l->x,l->y,l->resolutionX,l->resolutionY));
                     Feature* newF = baseFeature->children.back();
                     newF-> offsets = baseFeature->offsets;
                     newF->offsets.push_back(Location(color,x,y,rx,ry));
@@ -301,19 +282,24 @@ void AdaptiveFeatures::generateCandidateFeatures(Feature*& baseFeature){
 }
 
 void AdaptiveFeatures::updateDelta(float delta){
+    alreadyCreatedANewGroup = false;
     queue<Feature*> q;
     q.push(rootFeature);
-    
     while (!q.empty()){
         Feature* f = q.front();
         q.pop();
         if (f->previousActive){
             f->sumDelta+=delta;
-            for (auto child:f->children){
-                q.push(child);
+            if (f->featureIndex>=candidateStartIndex){
+                putToGroup(f->featureIndex);
+            }else{
+                for (auto child:f->children){
+                    q.push(child);
+                }
             }
         }
     }
+    reorganizeGroups();
 }
 
 /*void AdaptiveFeatures::updateWeights(vector<vector<float> >& w,float learningRate){
@@ -339,7 +325,7 @@ void AdaptiveFeatures::updateDelta(float delta){
     }
 }*/
 
-void AdaptiveFeatures::resetDelta(){
+void AdaptiveFeatures::resetPromotionCriteria(){
     queue<Feature*> q;
     q.push(rootFeature);
     
@@ -348,13 +334,50 @@ void AdaptiveFeatures::resetDelta(){
         q.pop();
         
         f->sumDelta = 0.0;
+        
+        for (auto child:f->children){
+            q.push(child);
+        }
+    }
+    candidateGroups.clear();
+    candidateIndexToGroupIndex.clear();
+    numGroups = 0;
+}
+
+void AdaptiveFeatures::relabelCandidatesIndex(){
+    candidateIndex = numFeatures+2*numPromotions;
+    queue<Feature*> q;
+    q.push(rootFeature);
+    while (!q.empty()){
+        Feature* f = q.front();
+        q.pop();
+        
+        if (f->featureIndex>=candidateStartIndex){
+            f->featureIndex = candidateIndex++;
+        }else{
+            for (auto child:f->children){
+                q.push(child);
+            }
+        }
+    }
+    candidateStartIndex = numFeatures+2*numPromotions;
+}
+
+void AdaptiveFeatures::resetActive(){
+    queue<Feature*> q;
+    q.push(rootFeature);
+    
+    while (!q.empty()){
+        Feature* f = q.front();
+        q.pop();
+        
+        f->active = false;
         f->previousActive = false;
         
         for (auto child:f->children){
             q.push(child);
         }
     }
-
 }
 
 long long AdaptiveFeatures::getNumFeatures(){
@@ -493,20 +516,41 @@ void AdaptiveFeatures::updateRepresentatiePixel(int& x, int& y, Disjoint_Set_Ele
     root->size += other->size;
 }
 
-void AdaptiveFeatures::resetActive(){
-    queue<Feature*> q;
-    q.push(rootFeature);
-    
-    while (!q.empty()){
-        Feature* f = q.front();
-        q.pop();
-        
-        f->active = false;
-        f->previousActive = false;
-        
-        for (auto child:f->children){
-            q.push(child);
+void AdaptiveFeatures::putToGroup(long long candidateIndex){
+    if (candidateIndexToGroupIndex[candidateIndex] == 0){
+        if (alreadyCreatedANewGroup){
+            candidateIndexToGroupIndex[candidateIndex] = numGroups;
+            candidateGroups[numGroups-1].numCandidates+=1;
+        }else{
+            alreadyCreatedANewGroup = true;
+            Group agroup;
+            agroup.numCandidates = 1;
+            candidateGroups.push_back(agroup);
+            ++numGroups;
+            candidateIndexToGroupIndex[candidateIndex] = numGroups;
         }
+    }else{
+        long long groupIndex = candidateIndexToGroupIndex[candidateIndex]-1;
+        candidateGroups[groupIndex].candidates.push_back(candidateIndex);
     }
-
 }
+
+void AdaptiveFeatures::reorganizeGroups(){
+    long long n = numGroups-(int)alreadyCreatedANewGroup;
+    for (int i=0;i<n;++i){
+        auto group = &candidateGroups[i];
+        if (group->candidates.size()!=group->numCandidates && group->candidates.size()!=0){
+            Group newGroup;
+            newGroup.numCandidates = group->candidates.size();
+            candidateGroups.push_back(newGroup);
+            ++numGroups;
+            for (auto candidateIndex:group->candidates){
+                candidateIndexToGroupIndex[candidateIndex] = numGroups;
+            }
+            group->numCandidates = group->numCandidates - group->candidates.size();
+        }
+        group->candidates.clear();
+        group->candidates.shrink_to_fit();
+    }
+}
+

@@ -11,8 +11,8 @@
 #include "Background.hpp"
 
 #include <tuple>
-#include <set>
 #include <unordered_map>
+#include <unordered_set>
 
 #ifndef Adaptive_Features_H
 #define Adaptive_Features_H
@@ -49,6 +49,7 @@ struct Feature{
 
 #ifndef DISJOINT_SET_ELEMENT
 #define DISJOINT_SET_ELEMENT
+//this is for blobs
 struct Disjoint_Set_Element{
     int rowUp, rowDown, columnLeft, columnRight;
     int size;
@@ -57,34 +58,56 @@ struct Disjoint_Set_Element{
 };
 #endif
 
+#ifndef Candidate_Group
+#define Candidate_Group
+struct Group{
+    long long numCandidates;
+    vector<long long> candidates;
+};
+#endif
+
 
 using namespace std;
 
 class AdaptiveFeatures : public Features::Features{
 	private:
+        //general information
 		Parameters *param;
         Background *background;
         int numColors;
         int numActions; 
         int numPromotions;
         long long numFeatures;
-        vector<vector<tuple<int,int> > > blobs;
-        vector<Feature*> baseFeatures;
-        unordered_map<long long, Feature*> indexToFeature;
-        Feature* rootFeature;
-        int bestAbsolutePositionResolution = 300;
-        int bestOffsetResolution = 300;
     
-        void constructBaseFeatures();
+        //for blobs
+        vector<vector<tuple<int,int> > > blobs;
         void getBlobs(const ALEScreen& screen);
-        void recursionToCheckFeatures(Feature*& current, vector<tuple<int,int> > possibleAnchorPositions, vector<long long>& activeFeatuers);
-        void generateCandidateFeatures(Feature*& baseFeature);
-
-        // helper functions to get blobs in the screen
         int neighborSize;
         vector<vector<vector<unsigned short> > >* fullNeighbors;
         vector<vector<vector<unsigned short> > >* extraNeighbors;
         void updateRepresentatiePixel(int& x, int& y, Disjoint_Set_Element* root, Disjoint_Set_Element* other);
+    
+        //for get active features
+        void recursionToCheckFeatures(Feature*& current, vector<tuple<int,int> > possibleAnchorPositions, vector<long long>& activeFeatuers);
+    
+        //for generate features
+        Feature* rootFeature;
+        vector<Feature*> baseFeatures;
+        void constructBaseFeatures();
+        void generateCandidateFeatures(Feature*& baseFeature);
+    
+        //for demote features
+        //unordered_map<long long, Feature*> indexToFeature;
+    
+        //for group candidates
+        unordered_map<long long, long long> candidateIndexToGroupIndex;
+        vector<Group> candidateGroups;
+        long long numGroups, candidateStartIndex, candidateIndex;
+        bool alreadyCreatedANewGroup;
+        void putToGroup(long long candidateIndex);
+        void reorganizeGroups();
+        void relabelCandidatesIndex();
+    
 	
     public:
 		
@@ -118,10 +141,10 @@ class AdaptiveFeatures : public Features::Features{
         virtual void getActiveFeaturesIndices(const ALEScreen &screen, const ALERAM &ram, vector<long long>& activeFeatures);
         void updateDelta(float delta);
         void promoteFeatures();
+        //void demoteFeature(long long index);
         //void updateWeights(vector<vector<float> >& weights,float learningRate);
         long long getNumFeatures();
-        void resetDelta();
+        void resetPromotionCriteria();
         void resetActive();
-        //void demoteFeature(long long index);
 };
 #endif

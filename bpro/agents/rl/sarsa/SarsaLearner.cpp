@@ -17,9 +17,7 @@
 #include <set>
 #include <algorithm>
 #include "../../../features/BlobTimeFeatures.hpp"
-
 using namespace std;
-
 
 SarsaLearner::SarsaLearner(ALEInterface& ale, Features *features, Parameters *param,int seed) : RLLearner(ale, param,seed) {
     
@@ -153,7 +151,7 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
     
     //Repeat (for each episode):
     //This is going to be interrupted by the ALE code since I set max_num_frames beforehand
-    for(int episode = episodePassed+1; totalNumberFrames < 20000000; episode++){
+    for(int episode = episodePassed+1; totalNumberFrames < 25000000; episode++){
         //random no-op
         unsigned int noOpNum = 0;
         if (randomNoOp){
@@ -253,10 +251,10 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
         features->resetActive();
         
         //promote features
-        if (totalNumberFrames>=numberOfFramesToPromotion && totalNumberFrames<20000000){
+        if (totalNumberFrames>=numberOfFramesToPromotion){
             //features->updateWeights(w,learningRate);
             features->promoteFeatures();
-            features->resetDelta();
+            features->resetPromotionCriteria();
             numberOfFramesToPromotion+=promotionFrequency;
         }
         
@@ -270,7 +268,7 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
     
     cout<<"reset learning\n"<<endl;
     features->promoteFeatures();
-    features->resetDelta();
+    features->resetPromotionCriteria();
     numFeatures = features->getNumFeatures();
     for (int a=0;a<numActions;++a){
         w[a].resize(numFeatures,0.0);

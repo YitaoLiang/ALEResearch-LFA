@@ -427,8 +427,3 @@ void BlobTimeFeatures::clearCash(){
     previousBlobActiveColors.clear();
 }
 
-void BlobTimeFeatures::promoteFeatures(){}
-void BlobTimeFeatures::updateDelta(float delta){}
-void BlobTimeFeatures::resetDelta(){}
-void BlobTimeFeatures::resetActive(){}
-long long BlobTimeFeatures::getNumFeatures(){ return 0;}

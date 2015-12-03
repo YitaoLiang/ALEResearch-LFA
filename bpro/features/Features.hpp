@@ -55,7 +55,7 @@ class Features{
         virtual void promoteFeatures() = 0;
         virtual void updateDelta(float delta) = 0;
         //virtual void updateWeights(vector<vector<float> >& weights, float learningRate) =0;
-        virtual void resetDelta() = 0;
+        virtual void resetPromotionCriteria() = 0;
         virtual void resetActive() = 0;
         virtual long long getNumFeatures() = 0;
 };
