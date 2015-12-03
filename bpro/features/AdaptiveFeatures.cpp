@@ -543,6 +543,7 @@ void AdaptiveFeatures::reorganizeGroups(){
             Group newGroup;
             newGroup.numCandidates = group->candidates.size();
             candidateGroups.push_back(newGroup);
+            group =&candidateGroups[i];
             ++numGroups;
             for (auto candidateIndex:group->candidates){
                 candidateIndexToGroupIndex[candidateIndex] = numGroups;

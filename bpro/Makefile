@@ -24,7 +24,7 @@ endif
 
 all: learnerAdaptive
 
-learnerAdaptive: bin/mainAdaptive.o bin/Mathematics.o bin/Parameters.o bin/Timer.o bin/Features.o bin/Background.o bin/AdaptiveFeatures.o bin/RLLearner.o bin/SarsaLearner.o bin/BlobTimeFeaturs.o bin/BlobTimeFeatures.o
+learnerAdaptive: bin/mainAdaptive.o bin/Mathematics.o bin/Parameters.o bin/Timer.o bin/Features.o bin/Background.o bin/AdaptiveFeatures.o bin/RLLearner.o bin/SarsaLearner.o bin/BlobTimeFeaturs.o
 	$(CXX) $(FLAGS) bin/mainAdaptive.o bin/Mathematics.o bin/Timer.o bin/Parameters.o bin/Features.o bin/Background.o bin/AdaptiveFeatures.o bin/RLLearner.o bin/SarsaLearner.o bin/BlobTimeFeatures.o -o learnerAdaptive
 
 bin/mainAdaptive.o: mainAdaptive.cpp
