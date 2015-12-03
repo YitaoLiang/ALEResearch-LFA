@@ -286,9 +286,6 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
             for (int a=0;a<numActions;++a){
                 w[a].resize(numFeatures,0.0);
                 e[a].resize(numFeatures,0.0);
-                fill(w[a].begin(),w[a].end(),0);
-                fill(e[a].begin(),e[a].end(),0);
-                nonZeroElig[a].clear();
             }
             numberOfFramesToPromotion+=promotionFrequency;
         }
@@ -308,9 +305,6 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
     for (int a=0;a<numActions;++a){
         w[a].resize(numFeatures,0.0);
         e[a].resize(numFeatures,0.0);
-        fill(w[a].begin(),w[a].end(),0);
-        fill(e[a].begin(),e[a].end(),0);
-        nonZeroElig[a].clear();
     }
                                                                                                     
     cumReward = 0.0; prevCumReward = 0.0;
