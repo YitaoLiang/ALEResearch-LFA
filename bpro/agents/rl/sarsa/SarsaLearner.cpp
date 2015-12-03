@@ -73,12 +73,12 @@ SarsaLearner::SarsaLearner(ALEInterface& ale, Features *features, Parameters *pa
 
 SarsaLearner::~SarsaLearner(){}
 
-void SarsaLearner::updateQValues(vector<long long> &activeFeatures, vector<float> &QValues){
+void SarsaLearner::updateQValues(vector<long long> &activeFeatures, vector<float> &QValues, vector<vector<float> >& weights){
     unsigned long long featureSize = activeFeatures.size();
     for(int a = 0; a < numActions; ++a){
         float sumW = 0;
         for(unsigned long long i = 0; i < featureSize; ++i){
-            sumW = sumW + w[a][activeFeatures[i]];
+            sumW = sumW + weights[a][activeFeatures[i]];
         }
         QValues[a] = sumW;
     }
@@ -97,35 +97,35 @@ void SarsaLearner::sanityCheck(){
     }
 }
 
-void SarsaLearner::updateReplTrace(int action, vector<long long> &Features){
+void SarsaLearner::updateReplTrace(int action, vector<long long> &Features, vector<vector<float> >& eligibilityTrace, vector<vector<long long> >& nonZeroEligibilityTrace){
     //e <- gamma * lambda * e
-    for(unsigned int a = 0; a < nonZeroElig.size(); a++){
+    for(unsigned int a = 0; a < nonZeroEligibilityTrace.size(); a++){
         long long numNonZero = 0;
-        for(unsigned long long i = 0; i < nonZeroElig[a].size(); i++){
-            long long idx = nonZeroElig[a][i];
+        for(unsigned long long i = 0; i < nonZeroEligibilityTrace[a].size(); i++){
+            long long idx = nonZeroEligibilityTrace[a][i];
             //To keep the trace sparse, if it is
             //less than a threshold it is zero-ed.
-            e[a][idx] = gamma * lambda * e[a][idx];
-            if(e[a][idx] < traceThreshold){
-                e[a][idx] = 0;
+            eligibilityTrace[a][idx] = gamma * lambda * eligibilityTrace[a][idx];
+            if(eligibilityTrace[a][idx] < traceThreshold){
+                eligibilityTrace[a][idx] = 0;
             }
             else{
-                nonZeroElig[a][numNonZero] = idx;
+                nonZeroEligibilityTrace[a][numNonZero] = idx;
                 numNonZero++;
             }
         }
-        nonZeroElig[a].resize(numNonZero);
+        nonZeroEligibilityTrace[a].resize(numNonZero);
     }
     
     //For all i in Fa:
-    for(unsigned int i = 0; i < F.size(); i++){
+    for(unsigned int i = 0; i < Features.size(); i++){
         long long idx = Features[i];
         //If the trace is zero it is not in the vector
         //of non-zeros, thus it needs to be added
-        if(e[action][idx] == 0){
-            nonZeroElig[action].push_back(idx);
+        if(eligibilityTrace[action][idx] == 0){
+            nonZeroEligibilityTrace[action].push_back(idx);
         }
-        e[action][idx] = 1;
+        eligibilityTrace[action][idx] = 1;
     }
 }
 
@@ -141,13 +141,24 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
     vector<double> episodeFps;
     
     BlobTimeFeatures behaviorFeatures(this->param);
-
     
-    long long numFeatures = behaviorFeatures.getNumberOfFeatures();
+    
+    //initialize for behvior policy weights and expanded(learning) policy weights
+    vector<vector<float> > behaviorW;
+    vector<vector<float> > behaviorE;
+    vector<vector<long long> > behaviorNonZeroElig;
+    long long numBehaviorFeatures = behaviorFeatures.getNumberOfFeatures();
+    long long numFeatures = features->getNumFeatures();
     for (int a=0;a<numActions;++a){
         w[a].resize(numFeatures,0.0);
         e[a].resize(numFeatures,0.0);
+        
+        behaviorW.push_back(vector<float>(numBehaviorFeatures,0.0));
+        behaviorE.push_back(vector<float>(numBehaviorFeatures,0.0));
+        behaviorNonZeroElig.push_back(vector<long long>());
     }
+    vector<long long> behaviorF, behaviorFnext;
+    float behaviorLearningRate = 0.5; float behaviorFeatVectorNorm = 1;
     
     //Repeat (for each episode):
     //This is going to be interrupted by the ALE code since I set max_num_frames beforehand
@@ -168,14 +179,20 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
                 e[a][idx] = 0.0;
             }
             nonZeroElig[a].clear();
+            
+            for (unsigned long long i=0; i<behaviorNonZeroElig[a].size();i++){
+                long long idx = behaviorNonZeroElig[a][i];
+                behaviorE[a][idx] = 0.0;
+            }
+            behaviorNonZeroElig[a].clear();
         }
 
         
         F.clear();
         features->getActiveFeaturesIndices(ale.getScreen(), ale.getRAM(), F);
-        F.clear();
-        behaviorFeatures.getActiveFeaturesIndices(ale.getScreen(),ale.getRAM(),F);
-        updateQValues(F, Q);
+        behaviorF.clear();
+        behaviorFeatures.getActiveFeaturesIndices(ale.getScreen(),ale.getRAM(),behaviorF);
+        updateQValues(behaviorF, Q, behaviorW);
         currentAction = epsilonGreedy(Q,episode);
 
         gettimeofday(&tvBegin, NULL);
@@ -186,8 +203,9 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
             reward.clear();
             reward.push_back(0.0);
             reward.push_back(0.0);
-            updateQValues(F, Q);
-            updateReplTrace(currentAction, F);
+            updateQValues(behaviorF, Q, behaviorW);
+            updateReplTrace(currentAction,F,e,nonZeroElig);
+            updateReplTrace(currentAction,behaviorF,behaviorE,behaviorNonZeroElig);
             
             sanityCheck();
             //Take action, observe reward and next state:
@@ -197,9 +215,9 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
                 //Obtain active features in the new state:
                 Fnext.clear();
                 features->getActiveFeaturesIndices(ale.getScreen(), ale.getRAM(), Fnext);
-                Fnext.clear();
-                behaviorFeatures.getActiveFeaturesIndices(ale.getScreen(),ale.getRAM(),Fnext);
-                updateQValues(Fnext, Qnext);     //Update Q-values for the new active features
+                behaviorFnext.clear();
+                behaviorFeatures.getActiveFeaturesIndices(ale.getScreen(),ale.getRAM(),behaviorFnext);
+                updateQValues(behaviorFnext, Qnext, behaviorW);     //Update Q-values for the new active features
                 nextAction = epsilonGreedy(Qnext,episode);
             }
             else{
@@ -212,7 +230,11 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
             //the time, Marc used such approach in his JAIR paper
             if (F.size() > maxFeatVectorNorm){
                 maxFeatVectorNorm = F.size();
-                learningRate = 0.5/maxFeatVectorNorm;
+                learningRate = alpha/maxFeatVectorNorm;
+            }
+            if (behaviorF.size() > behaviorFeatVectorNorm){
+                behaviorFeatVectorNorm = behaviorF.size();
+                behaviorLearningRate = 0.5/behaviorFeatVectorNorm;
             }
             delta = reward[0] + gamma * Qnext[nextAction] - Q[currentAction];
             
@@ -222,6 +244,10 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
                     long long idx = nonZeroElig[a][i];
                     w[a][idx] = w[a][idx] + learningRate * delta * e[a][idx];
                 }
+                for (unsigned int i=0; i< behaviorNonZeroElig[a].size();i++){
+                    long long idx = behaviorNonZeroElig[a][i];
+                    behaviorW[a][idx] = behaviorW[a][idx] + behaviorLearningRate * delta * behaviorE[a][idx];
+                }
             }
             
             //updeta features' sum of delta
@@ -230,6 +256,7 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
             }
             
             F = Fnext;
+            behaviorF = behaviorFnext;
             currentAction = nextAction;
         }
         gettimeofday(&tvEnd, NULL);
@@ -255,6 +282,14 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
             //features->updateWeights(w,learningRate);
             features->promoteFeatures();
             features->resetPromotionCriteria();
+            numFeatures = features->getNumFeatures();
+            for (int a=0;a<numActions;++a){
+                w[a].resize(numFeatures,0.0);
+                e[a].resize(numFeatures,0.0);
+                fill(w[a].begin(),w[a].end(),0);
+                fill(e[a].begin(),e[a].end(),0);
+                nonZeroElig[a].clear();
+            }
             numberOfFramesToPromotion+=promotionFrequency;
         }
         
@@ -277,7 +312,7 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
         fill(e[a].begin(),e[a].end(),0);
         nonZeroElig[a].clear();
     }
-    maxFeatVectorNorm = 1;
+                                                                                                    
     cumReward = 0.0; prevCumReward = 0.0;
     for(int episode = 1; totalNumberFrames < totalNumberOfFramesToLearn; episode++){
         //random no-op
@@ -301,7 +336,7 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
         
         F.clear();
         features->getActiveFeaturesIndices(ale.getScreen(), ale.getRAM(), F);
-        updateQValues(F, Q);
+        updateQValues(F, Q,w);
         currentAction = epsilonGreedy(Q,episode);
         
         gettimeofday(&tvBegin, NULL);
@@ -312,8 +347,8 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
             reward.clear();
             reward.push_back(0.0);
             reward.push_back(0.0);
-            updateQValues(F, Q);
-            updateReplTrace(currentAction, F);
+            updateQValues(F, Q, w);
+            updateReplTrace(currentAction, F,e,nonZeroElig);
             
             sanityCheck();
             //Take action, observe reward and next state:
@@ -323,7 +358,7 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
                 //Obtain active features in the new state:
                 Fnext.clear();
                 features->getActiveFeaturesIndices(ale.getScreen(), ale.getRAM(), Fnext);
-                updateQValues(Fnext, Qnext);     //Update Q-values for the new active features
+                updateQValues(Fnext, Qnext,w);     //Update Q-values for the new active features
                 nextAction = epsilonGreedy(Qnext,episode);
             }
             else{
@@ -401,7 +436,7 @@ void SarsaLearner::evaluatePolicy(ALEInterface& ale, Features *features){
             //Get state and features active on that state:
             F.clear();
             features->getActiveFeaturesIndices(ale.getScreen(), ale.getRAM(), F);
-            updateQValues(F, Q);       //Update Q-values for each possible action
+            updateQValues(F, Q, w);       //Update Q-values for each possible action
             currentAction = epsilonGreedy(Q);
             //Take action, observe reward and next state:
             reward = ale.act(actions[currentAction]);

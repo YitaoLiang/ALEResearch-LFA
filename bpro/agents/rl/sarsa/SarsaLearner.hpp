@@ -60,9 +60,8 @@ private:
      * It updates the vector<double> Q assuming that vector<int> F is filled, as it sums just the weights
      * that are active in F.
      */
-    void updateQValues(vector<long long> &Features, vector<float> &QValues);
-   
-    
+    void updateQValues(vector<long long> &Features, vector<float> &QValues, vector<vector<float> >& weights);
+
     void saveCheckPoint(int episode, int totalNumberFrames,  vector<float>& episodeResults, int& frequency, vector<int>& episodeFrames, vector<double>& episodeFps);
     void loadCheckPoint(ifstream& checkPointToLoad);
     
@@ -89,6 +88,6 @@ public:
      * Destructor, not necessary in this class.
      */
     ~SarsaLearner();
-    void updateReplTrace(int action, vector<long long> &Features);
+    void updateReplTrace(int action, vector<long long> &Features, vector<vector<float> >& eligibilityTrace, vector<vector<long long> >& nonZeroEligibilityTrace);
 };
 #endif
