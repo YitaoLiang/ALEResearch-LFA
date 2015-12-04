@@ -165,7 +165,7 @@ void SarsaLearner::learnPolicy(ALEInterface& ale, Features *features){
     
     //Repeat (for each episode):
     //This is going to be interrupted by the ALE code since I set max_num_frames beforehand
-    for(int episode = episodePassed+1; totalNumberFrames < 25000000; episode++){
+    for(int episode = episodePassed+1; totalNumberFrames < 100000000; episode++){
         //random no-op
         unsigned int noOpNum = 0;
         if (randomNoOp){
