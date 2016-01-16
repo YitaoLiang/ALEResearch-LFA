@@ -18,4 +18,6 @@ In blob and bproTime, it has seperate functions to generate temporal offsets (on
 
 The latest research results are available on http://arxiv.org/abs/1512.01563
 
+Braches start with Adaptive include our codes to attempt an adaptive feature representation in ALE. The work is still in progress.
+
 
