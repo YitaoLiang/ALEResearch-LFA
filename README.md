@@ -16,7 +16,7 @@ Another intersting brach is blobThreeVersion1(and blobThreeVersion2). Instead of
 
 In blob and bproTime, it has seperate functions to generate temporal offsets (one pixel comes from current screen and the other comes from the screen five frames ago  and spatial offsets (both pixels come from current screens). The fucntions are called addTimeDimensionalOffsets and addRelativeFeaturesIndices respectively. In case you only want to run Blob-PROS or Blob-PROT (or B-PROS/ B-PROT), you can commet out the corresponding functions. Both have a redundant function called addThreePointOffsetsIndices, it never gets called. 
 
-The latest research results are available on http://arxiv.org/abs/1512.01563
+The latest research results are available on http://arxiv.org/abs/1512.01563. Also this paper was nominated for Best Paper Award in AAMAS 2016.
 
 Braches start with Adaptive include our codes to attempt an adaptive feature representation in ALE. The work is still in progress.
 
